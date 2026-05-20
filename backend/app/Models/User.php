@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+#[Fillable(['name', 'email', 'password', 'role', 'phone', 'profile_photo_path', 'bio', 'location_lat', 'location_lng', 'is_active'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable, SoftDeletes;
+
+    // Role constants
+    public const ROLE_SYSTEM_ADMIN = 'system_admin';
+    public const ROLE_ORGANIZER = 'organizer';
+    public const ROLE_CUSTOMER = 'customer';
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'location_lat' => 'float',
+            'location_lng' => 'float',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function isSystemAdmin(): bool
+    {
+        return $this->role === self::ROLE_SYSTEM_ADMIN;
+    }
+
+    public function isOrganizer(): bool
+    {
+        return $this->role === self::ROLE_ORGANIZER;
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->role === self::ROLE_CUSTOMER;
+    }
+}
