@@ -10,7 +10,7 @@ class Event extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organizer_id', 'title', 'description', 'location_name', 'location_address',
+        'title', 'description', 'location_name', 'location_address',
         'location_lat', 'location_lng', 'starts_at', 'ends_at', 'capacity', 'is_active', 'cover_path',
     ];
 
@@ -21,11 +21,6 @@ class Event extends Model
         'ends_at' => 'datetime',
         'is_active' => 'boolean',
     ];
-
-    public function organizer()
-    {
-        return $this->belongsTo(User::class, 'organizer_id');
-    }
 
     public function images()
     {

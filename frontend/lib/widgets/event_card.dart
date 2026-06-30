@@ -9,7 +9,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = event['id'] is int ? event['id'] as int : int.tryParse(event['id'].toString()) ?? 0;
-    final title = event['title'] ?? event['name'] ?? 'Event';
+    final title = event['title'] ?? event['name'] ?? 'Konser';
     final subtitle = event['short_description'] ?? event['location_name'] ?? '';
     final cover = event['cover_path'];
 
@@ -35,7 +35,7 @@ class EventCard extends StatelessWidget {
                         Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [Colors.transparent, Colors.black.withOpacity(0.45)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                              gradient: LinearGradient(colors: [Colors.transparent, const Color.fromRGBO(0, 0, 0, 0.45)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
                             ),
                           ),
                         ),

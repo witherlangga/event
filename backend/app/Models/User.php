@@ -18,9 +18,21 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'phone',
+        'profile_photo_path',
+        'bio',
+        'location_lat',
+        'location_lng',
+        'is_active',
+    ];
+
     // Role constants
     public const ROLE_SYSTEM_ADMIN = 'system_admin';
-    public const ROLE_ORGANIZER = 'organizer';
     public const ROLE_CUSTOMER = 'customer';
 
     /**
@@ -42,11 +54,6 @@ class User extends Authenticatable
     public function isSystemAdmin(): bool
     {
         return $this->role === self::ROLE_SYSTEM_ADMIN;
-    }
-
-    public function isOrganizer(): bool
-    {
-        return $this->role === self::ROLE_ORGANIZER;
     }
 
     public function isCustomer(): bool

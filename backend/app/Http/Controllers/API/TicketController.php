@@ -18,13 +18,11 @@ class TicketController extends Controller
     {
         $user = $request->user();
 
-        // Allow if system admin
+        // Allow system admin or ticket owner
         if (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin()) {
             // allowed
         } elseif ($user->id === $ticket->order->user_id) {
             // ticket owner
-        } elseif (optional($ticket->ticketType->event)->organizer_id === $user->id) {
-            // event organizer
         } else {
             return response()->json(['message' => 'Unauthorized to access this ticket'], 403);
         }

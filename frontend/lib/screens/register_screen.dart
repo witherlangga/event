@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
 import '../services/api_service.dart';
-import '../providers/auth_provider.dart';
-import '../models/user.dart';
+import '../constants/app_constants.dart';
+import '../theme.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -17,8 +17,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String _name = '';
   String _email = '';
   String _password = '';
-  String _role = 'customer';
-  
   bool _loading = false;
   String? _error;
 
@@ -26,32 +24,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
     setState(() { _loading = true; _error = null; });
+
     final body = {
       'name': _name,
       'email': _email,
       'password': _password,
       'password_confirmation': _password,
-      'role': _role,
     };
 
     final res = await ApiService.instance.post('/auth/register', body: body);
     setState(() { _loading = false; });
     if (res.statusCode == 201 || res.statusCode == 200) {
-      try {
-        final parsed = jsonDecode(res.body) as Map<String, dynamic>;
-        final token = parsed['access_token'] as String? ?? parsed['token'] as String?;
-        final userJson = parsed['user'] as Map<String, dynamic>?;
-        if (token != null) {
-          final auth = ref.read(authNotifierProvider.notifier);
-          final user = userJson != null ? UserModel.fromJson(userJson) : null;
-          await auth.setAuth(token, user);
-          Navigator.of(context).pushReplacementNamed('/home');
-          return;
-        }
-      } catch (_) {}
-      Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+      return;
     } else {
-      String message = 'Register failed: ${res.statusCode}';
+      String message = 'Registrasi gagal: ${res.statusCode}';
       try {
         final parsed = jsonDecode(res.body) as Map<String, dynamic>;
         if (parsed.containsKey('errors')) {
@@ -82,55 +69,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(height: 6),
-                      const FlutterLogo(size: 64),
+                      const Icon(Icons.person_add, size: 56, color: AppTheme.accent),
                       const SizedBox(height: 12),
-                      Text('Create account', style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 12),
+                      Text('Daftar ${AppConstants.fanLabel}', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 4),
+                      Text('Bergabung dengan komunitas ${AppConstants.bandName}', style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 16),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Full name',
-                          prefixIcon: const Icon(Icons.person_outline),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        decoration: const InputDecoration(
+                          labelText: 'Nama lengkap',
+                          prefixIcon: Icon(Icons.person_outline),
                         ),
                         onSaved: (v) => _name = v ?? '',
-                        validator: (v) => v != null && v.isNotEmpty ? null : 'Enter name',
+                        validator: (v) => v != null && v.isNotEmpty ? null : 'Masukkan nama',
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: Icon(Icons.email_outlined),
                         ),
                         keyboardType: TextInputType.emailAddress,
                         onSaved: (v) => _email = v ?? '',
-                        validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
+                        validator: (v) => v != null && v.contains('@') ? null : 'Masukkan email valid',
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: Icon(Icons.lock_outline),
                         ),
                         obscureText: true,
                         onSaved: (v) => _password = v ?? '',
-                        validator: (v) => v != null && v.length >= 6 ? null : 'Password too short',
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        initialValue: _role,
-                        decoration: InputDecoration(
-                          labelText: 'Register as',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: 'customer', child: Text('Customer')),
-                          DropdownMenuItem(value: 'organizer', child: Text('Organizer')),
-                        ],
-                        onChanged: (v) => setState(() { _role = v ?? 'customer'; }),
-                        onSaved: (v) => _role = v ?? 'customer',
+                        validator: (v) => v != null && v.length >= 6 ? null : 'Password minimal 6 karakter',
                       ),
                       const SizedBox(height: 14),
                       if (_error != null) ...[
@@ -141,15 +112,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-                          ),
-                          child: _loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Register'),
+                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                          child: _loading
+                              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Text('Daftar'),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Back to login')),
+                      TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Kembali ke login')),
                     ],
                   ),
                 ),

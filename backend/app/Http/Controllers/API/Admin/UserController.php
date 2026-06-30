@@ -18,7 +18,7 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $v = $request->validate([
-            'role' => ['required', Rule::in(['system_admin','organizer','customer'])],
+            'role' => ['required', Rule::in(['system_admin', 'customer'])],
             'is_active' => ['required','boolean'],
         ]);
 

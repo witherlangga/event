@@ -13,7 +13,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
         if (! $user || ! method_exists($user, 'isSystemAdmin') || ! $user->isSystemAdmin()) {
-            return redirect()->route('organizer.login')->with('error', 'Unauthorized');
+            return redirect()->route('dev.impersonate')->with('error', 'Unauthorized');
         }
 
         $users = User::orderByDesc('created_at')->get();
@@ -24,7 +24,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
         if (! $user || ! method_exists($user, 'isSystemAdmin') || ! $user->isSystemAdmin()) {
-            return redirect()->route('organizer.login')->with('error', 'Unauthorized');
+            return redirect()->route('dev.impersonate')->with('error', 'Unauthorized');
         }
 
         $v = $request->validate([
@@ -44,7 +44,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
         if (! $user || ! method_exists($user, 'isSystemAdmin') || ! $user->isSystemAdmin()) {
-            return redirect()->route('organizer.login')->with('error', 'Unauthorized');
+            return redirect()->route('dev.impersonate')->with('error', 'Unauthorized');
         }
 
         $u = User::findOrFail($id);

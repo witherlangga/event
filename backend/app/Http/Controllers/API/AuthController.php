@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\JwtBlacklist;
-use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -45,33 +44,22 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $roleValues = [
-            User::ROLE_CUSTOMER,
-            User::ROLE_ORGANIZER,
-            User::ROLE_SYSTEM_ADMIN,
-        ];
-
         $v = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
-            'role' => ['nullable', Rule::in($roleValues)],
         ]);
 
         if ($v->fails()) {
             return response()->json(['errors' => $v->errors()], 422);
         }
 
-        // Determine role (default customer). If organizer requested, require invite code and config enabled.
-        $role = $request->input('role', User::ROLE_CUSTOMER);
-
-        // free registration for requested role (validated above)
-
+        // Registrasi hanya untuk fans (customer). Admin dibuat via seeder.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $role,
+            'role' => User::ROLE_CUSTOMER,
         ]);
 
         $token = $this->createToken($user);

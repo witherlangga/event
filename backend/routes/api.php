@@ -2,6 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\BandProfileController;
+use App\Http\Controllers\API\BandMemberController;
+use App\Http\Controllers\API\AlbumController;
+use App\Http\Controllers\API\GalleryController;
+use App\Http\Controllers\API\NewsController;
+use App\Http\Controllers\API\Admin\BandProfileController as AdminBandProfileController;
+use App\Http\Controllers\API\Admin\BandMemberController as AdminBandMemberController;
+use App\Http\Controllers\API\Admin\AlbumController as AdminAlbumController;
+use App\Http\Controllers\API\Admin\SongController as AdminSongController;
+use App\Http\Controllers\API\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\API\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\API\Admin\ConcertController;
+use App\Http\Controllers\API\Admin\TicketTypeController as AdminTicketTypeController;
+use App\Http\Controllers\API\Admin\UserController as AdminUserController;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -13,44 +27,80 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Public events for customers
+// Konten band (publik)
+Route::get('band/profile', [BandProfileController::class, 'show']);
+Route::get('band/members', [BandMemberController::class, 'index']);
+Route::get('band/albums', [AlbumController::class, 'index']);
+Route::get('band/albums/{album}', [AlbumController::class, 'show']);
+Route::get('band/gallery', [GalleryController::class, 'index']);
+Route::get('band/news', [NewsController::class, 'index']);
+Route::get('band/news/{newsPost}', [NewsController::class, 'show']);
+
+// Konser (publik)
 Route::get('events', [\App\Http\Controllers\API\EventController::class, 'index']);
 Route::get('events/{event}', [\App\Http\Controllers\API\EventController::class, 'show']);
 
-// Organizer routes
-Route::prefix('organizer')->group(function () {
-    Route::middleware([\App\Http\Middleware\JwtMiddleware::class, \App\Http\Middleware\RoleMiddleware::class.':organizer'])->group(function () {
-        Route::get('events', [\App\Http\Controllers\API\Organizer\EventController::class, 'index']);
-        Route::post('events', [\App\Http\Controllers\API\Organizer\EventController::class, 'store']);
-        Route::get('events/{event}', [\App\Http\Controllers\API\Organizer\EventController::class, 'show']);
-        Route::put('events/{event}', [\App\Http\Controllers\API\Organizer\EventController::class, 'update']);
-        Route::delete('events/{event}', [\App\Http\Controllers\API\Organizer\EventController::class, 'destroy']);
-        Route::post('events/{event}/cover', [\App\Http\Controllers\API\Organizer\EventController::class, 'uploadCover']);
-        Route::post('events/{event}/gallery', [\App\Http\Controllers\API\Organizer\EventController::class, 'uploadGallery']);
-        Route::delete('events/{event}/gallery/{image}', [\App\Http\Controllers\API\Organizer\EventController::class, 'deleteGallery']);
-        // Ticket types management per event
-        Route::get('events/{event}/tickets', [\App\Http\Controllers\API\Organizer\TicketTypeController::class, 'index']);
-        Route::post('events/{event}/tickets', [\App\Http\Controllers\API\Organizer\TicketTypeController::class, 'store']);
-        Route::get('events/{event}/tickets/{ticket}', [\App\Http\Controllers\API\Organizer\TicketTypeController::class, 'show']);
-        Route::put('events/{event}/tickets/{ticket}', [\App\Http\Controllers\API\Organizer\TicketTypeController::class, 'update']);
-        Route::delete('events/{event}/tickets/{ticket}', [\App\Http\Controllers\API\Organizer\TicketTypeController::class, 'destroy']);
-    });
+// Admin
+Route::prefix('admin')->middleware([
+    \App\Http\Middleware\JwtMiddleware::class,
+    \App\Http\Middleware\RoleMiddleware::class.':system_admin',
+])->group(function () {
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::put('users/{user}', [AdminUserController::class, 'update']);
+    Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
+
+    Route::get('band/profile', [AdminBandProfileController::class, 'show']);
+    Route::put('band/profile', [AdminBandProfileController::class, 'update']);
+
+    Route::get('members', [AdminBandMemberController::class, 'index']);
+    Route::post('members', [AdminBandMemberController::class, 'store']);
+    Route::put('members/{member}', [AdminBandMemberController::class, 'update']);
+    Route::delete('members/{member}', [AdminBandMemberController::class, 'destroy']);
+
+    Route::get('albums', [AdminAlbumController::class, 'index']);
+    Route::post('albums', [AdminAlbumController::class, 'store']);
+    Route::put('albums/{album}', [AdminAlbumController::class, 'update']);
+    Route::delete('albums/{album}', [AdminAlbumController::class, 'destroy']);
+    Route::post('albums/{album}/songs', [AdminSongController::class, 'store']);
+    Route::put('albums/{album}/songs/{song}', [AdminSongController::class, 'update']);
+    Route::delete('albums/{album}/songs/{song}', [AdminSongController::class, 'destroy']);
+
+    Route::get('gallery', [AdminGalleryController::class, 'index']);
+    Route::post('gallery', [AdminGalleryController::class, 'store']);
+    Route::put('gallery/{galleryItem}', [AdminGalleryController::class, 'update']);
+    Route::delete('gallery/{galleryItem}', [AdminGalleryController::class, 'destroy']);
+
+    Route::get('news', [AdminNewsController::class, 'index']);
+    Route::post('news', [AdminNewsController::class, 'store']);
+    Route::put('news/{newsPost}', [AdminNewsController::class, 'update']);
+    Route::delete('news/{newsPost}', [AdminNewsController::class, 'destroy']);
+
+    Route::get('concerts', [ConcertController::class, 'index']);
+    Route::post('concerts', [ConcertController::class, 'store']);
+    Route::get('concerts/{event}', [ConcertController::class, 'show']);
+    Route::put('concerts/{event}', [ConcertController::class, 'update']);
+    Route::delete('concerts/{event}', [ConcertController::class, 'destroy']);
+    Route::post('concerts/{event}/cover', [ConcertController::class, 'uploadCover']);
+    Route::post('concerts/{event}/gallery', [ConcertController::class, 'uploadGallery']);
+    Route::delete('concerts/{event}/gallery/{image}', [ConcertController::class, 'deleteGallery']);
+
+    Route::get('concerts/{event}/tickets', [AdminTicketTypeController::class, 'index']);
+    Route::post('concerts/{event}/tickets', [AdminTicketTypeController::class, 'store']);
+    Route::get('concerts/{event}/tickets/{ticket}', [AdminTicketTypeController::class, 'show']);
+    Route::put('concerts/{event}/tickets/{ticket}', [AdminTicketTypeController::class, 'update']);
+    Route::delete('concerts/{event}/tickets/{ticket}', [AdminTicketTypeController::class, 'destroy']);
 });
 
-// Purchase endpoint for customers
 Route::post('events/{event}/purchase', [\App\Http\Controllers\API\PurchaseController::class, 'purchase'])
     ->middleware([\App\Http\Middleware\JwtMiddleware::class, \App\Http\Middleware\RoleMiddleware::class.':customer']);
 
-// Ticket QR serve (authenticated)
 Route::get('tickets/{ticket}/qr', [\App\Http\Controllers\API\TicketController::class, 'qr'])
     ->middleware([\App\Http\Middleware\JwtMiddleware::class]);
 
-// Signed download route for QR (no JWT required; link must be signed)
 Route::get('tickets/{ticket}/qr/download', [\App\Http\Controllers\API\TicketController::class, 'download'])
     ->name('tickets.qr.download')
     ->middleware(['signed']);
 
-// Orders management
 Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function () {
     Route::get('orders', [\App\Http\Controllers\API\OrderController::class, 'index']);
     Route::get('orders/{order}', [\App\Http\Controllers\API\OrderController::class, 'show']);
@@ -59,11 +109,4 @@ Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function (
     Route::post('orders/{order}/request-refund', [\App\Http\Controllers\API\OrderController::class, 'requestRefund']);
     Route::post('refunds/{refund}/approve', [\App\Http\Controllers\API\OrderController::class, 'approveRefund']);
     Route::post('refunds/{refund}/reject', [\App\Http\Controllers\API\OrderController::class, 'rejectRefund']);
-});
-
-// Admin API (user management) - use api/admin prefix to avoid colliding with web routes
-Route::prefix('api/admin')->middleware([\App\Http\Middleware\JwtMiddleware::class, \App\Http\Middleware\RoleMiddleware::class . ':system_admin'])->group(function () {
-    Route::get('users', [\App\Http\Controllers\API\Admin\UserController::class, 'index']);
-    Route::put('users/{user}', [\App\Http\Controllers\API\Admin\UserController::class, 'update']);
-    Route::delete('users/{user}', [\App\Http\Controllers\API\Admin\UserController::class, 'destroy']);
 });

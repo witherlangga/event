@@ -9,7 +9,7 @@ class RoleMiddleware
 {
     /**
      * Handle an incoming request.
-     * Usage: middleware([RoleMiddleware::class . ':organizer'])
+     * Usage: middleware([RoleMiddleware::class . ':system_admin'])
      */
     public function handle(Request $request, Closure $next, string $role)
     {

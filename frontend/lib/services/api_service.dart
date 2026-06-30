@@ -7,9 +7,6 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  // Update baseUrl if needed
-  // Use localhost for desktop/web; emulator devices may need 10.0.2.2
-  // API is served under /api prefix on the backend.
   final String baseUrl = 'http://localhost:8000/api';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -29,6 +26,19 @@ class ApiService {
     return http.post(uri, headers: h, body: jsonEncode(body ?? {}));
   }
 
+  Future<http.Response> put(String path, {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final h = await _defaultHeaders();
+    if (headers != null) h.addAll(headers);
+    return http.put(uri, headers: h, body: jsonEncode(body ?? {}));
+  }
+
+  Future<http.Response> delete(String path) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final h = await _defaultHeaders();
+    return http.delete(uri, headers: h);
+  }
+
   Future<http.Response> get(String path, {Map<String, String>? headers}) async {
     final uri = Uri.parse('$baseUrl$path');
     final h = await _defaultHeaders();
@@ -36,33 +46,83 @@ class ApiService {
     return http.get(uri, headers: h);
   }
 
-  Future<List<Map<String, dynamic>>> _getJsonList(http.Response res) async {
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      if (data is List) return List<Map<String, dynamic>>.from(data.cast<Map<String, dynamic>>());
-      if (data is Map && data['data'] is List) return List<Map<String, dynamic>>.from(data['data'].cast<Map<String, dynamic>>());
+  static List<Map<String, dynamic>> extractList(dynamic data) {
+    if (data is List) {
+      return List<Map<String, dynamic>>.from(data.cast<Map<String, dynamic>>());
     }
-    throw Exception('Failed to load: ${res.statusCode}');
+    if (data is Map && data['data'] is List) {
+      return List<Map<String, dynamic>>.from((data['data'] as List).cast<Map<String, dynamic>>());
+    }
+    return [];
   }
 
-  // Convenience helpers
-  Future<http.Response> getEvents() => get('/events');
+  static Map<String, dynamic>? extractObject(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      if (data['data'] is Map) {
+        return Map<String, dynamic>.from(data['data'] as Map);
+      }
+      return data;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchList(String path) async {
+    final res = await get(path);
+    if (res.statusCode == 200) {
+      return extractList(jsonDecode(res.body));
+    }
+    throw Exception('Gagal memuat data: ${res.statusCode}');
+  }
+
+  Future<http.Response> getEvents({String? query}) {
+    final path = '/events${query != null && query.isNotEmpty ? '?$query' : ''}';
+    return get(path);
+  }
+
   Future<http.Response> getEvent(int id) => get('/events/$id');
+  Future<http.Response> getBandProfile() => get('/band/profile');
+  Future<List<Map<String, dynamic>>> getBandMembers() => fetchList('/band/members');
+  Future<List<Map<String, dynamic>>> getAlbums() => fetchList('/band/albums');
+  Future<http.Response> getAlbum(int id) => get('/band/albums/$id');
+  Future<List<Map<String, dynamic>>> getGallery() => fetchList('/band/gallery');
+  Future<List<Map<String, dynamic>>> getNews() => fetchList('/band/news');
+  Future<http.Response> getNewsDetail(int id) => get('/band/news/$id');
+
+  Future<http.Response> getOrders({Map<String, String>? params}) {
+    final queryString = params != null && params.isNotEmpty
+        ? '?${params.entries.map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}').join('&')}'
+        : '';
+    return get('/orders$queryString');
+  }
+
+  Future<http.Response> getOrder(int id) => get('/orders/$id');
+  Future<http.Response> getAdminConcerts() => get('/admin/concerts');
   Future<http.Response> postPurchase(int eventId, Map<String, dynamic> body) => post('/events/$eventId/purchase', body: body);
 
   Future<http.Response> getTicketQr(int ticketId) async {
     final uri = Uri.parse('$baseUrl/tickets/$ticketId/qr');
     final h = await _defaultHeaders();
-    // Expect binary image
-    return http.get(uri, headers: h);
+    final res = await http.get(uri, headers: h);
+
+    if (res.statusCode == 200) {
+      try {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data['url'] is String) {
+          return http.get(Uri.parse(data['url']));
+        }
+      } catch (_) {}
+    }
+
+    return res;
   }
 
-  // Convenience: get events near location (radius km defaults to 10)
   Future<List<Map<String, dynamic>>> getEventsWithLocation(double lat, double lng, {double radiusKm = 10}) async {
     final uri = Uri.parse('$baseUrl/events?lat=$lat&lng=$lng&radius_km=$radiusKm');
     final h = await _defaultHeaders();
     final res = await http.get(uri, headers: h);
-    return _getJsonList(res);
+    if (res.statusCode == 200) {
+      return extractList(jsonDecode(res.body));
+    }
+    throw Exception('Gagal memuat konser: ${res.statusCode}');
   }
 }
-

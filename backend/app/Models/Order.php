@@ -30,4 +30,9 @@ class Order extends Model
     {
         return $this->hasMany(Refund::class);
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

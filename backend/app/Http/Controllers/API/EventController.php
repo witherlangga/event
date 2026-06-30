@@ -47,7 +47,53 @@ class EventController extends Controller
             return response()->json($events);
         }
 
-        $events = Event::where('is_active', true)->get();
+        $q = $request->query('q');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $eventQuery = Event::where('is_active', true)
+            ->when($q, function ($query, $value) {
+                $query->where(function ($q2) use ($value) {
+                    $q2->where('title', 'like', '%'.$value.'%')
+                        ->orWhere('description', 'like', '%'.$value.'%')
+                        ->orWhere('location_name', 'like', '%'.$value.'%')
+                        ->orWhere('location_address', 'like', '%'.$value.'%');
+                });
+            })
+            ->when($dateFrom, function ($query, $value) {
+                $query->whereDate('starts_at', '>=', $value);
+            })
+            ->when($dateTo, function ($query, $value) {
+                $query->whereDate('starts_at', '<=', $value);
+            });
+
+        if ($lat !== null && $lng !== null) {
+            try {
+                $driver = DB::getPdo()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            } catch (\Exception $e) {
+                $driver = null;
+            }
+
+            if ($driver !== 'sqlite') {
+                $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(location_lat)) * cos(radians(location_lng) - radians(?)) + sin(radians(?)) * sin(radians(location_lat))))";
+                $events = $eventQuery->selectRaw('*, ' . $haversine . ' AS distance_km', [$lat, $lng, $lat])
+                    ->having('distance_km', '<=', (float) $radius)
+                    ->orderBy('distance_km')
+                    ->get();
+                return response()->json($events);
+            }
+
+            $events = $eventQuery->get()->map(function ($event) use ($lat, $lng) {
+                $event->distance_km = $this->haversineDistance((float) $lat, (float) $lng, (float) $event->location_lat, (float) $event->location_lng);
+                return $event;
+            })->filter(function ($event) use ($radius) {
+                return $event->distance_km <= (float) $radius;
+            })->sortBy('distance_km')->values();
+
+            return response()->json($events);
+        }
+
+        $events = $eventQuery->get();
         return response()->json($events);
     }
 

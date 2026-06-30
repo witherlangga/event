@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../constants/app_constants.dart';
+import '../theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _error = err;
       });
     } else {
-      Navigator.of(context).pushReplacementNamed('/home');
+      if (mounted) Navigator.of(context).pushReplacementNamed('/home');
     }
   }
 
@@ -54,30 +56,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(height: 6),
-                      const FlutterLogo(size: 72),
-                      const SizedBox(height: 12),
-                      Text('Login', style: Theme.of(context).textTheme.titleLarge),
+                      const Icon(Icons.music_note, size: 64, color: AppTheme.accent),
+                      const SizedBox(height: 8),
+                      Text(AppConstants.bandName, style: Theme.of(context).textTheme.titleLarge),
+                      Text(AppConstants.tagline, style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 18),
+                      Text('Masuk', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 18),
                       TextFormField(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: Icon(Icons.email_outlined),
                         ),
                         keyboardType: TextInputType.emailAddress,
-                        validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
+                        validator: (v) => v != null && v.contains('@') ? null : 'Masukkan email valid',
                         onSaved: (v) => _email = v ?? '',
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: Icon(Icons.lock_outline),
                         ),
                         obscureText: true,
-                        validator: (v) => (v != null && v.length >= 6) ? null : 'Password too short',
+                        validator: (v) => (v != null && v.length >= 6) ? null : 'Password minimal 6 karakter',
                         onSaved: (v) => _password = v ?? '',
                       ),
                       const SizedBox(height: 14),
@@ -91,15 +93,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: _loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: _loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Login'),
+                          child: _loading
+                              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Text('Masuk'),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () => Navigator.of(context).pushNamed('/register'),
-                        child: const Text('Don\'t have an account? Register'),
+                        child: const Text('Belum punya akun? Daftar sebagai Fan'),
                       ),
                     ],
                   ),

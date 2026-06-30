@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
 use App\Models\Event;
 
 class EventLbsTest extends TestCase
@@ -13,16 +12,11 @@ class EventLbsTest extends TestCase
 
     public function test_lbs_returns_nearby_events()
     {
-        // create an organizer
-        $organizer = User::factory()->create(['role' => 'organizer']);
-
-        // nearby event (same coords as query)
         Event::create([
-            'organizer_id' => $organizer->id,
-            'title' => 'Nearby Event',
-            'description' => 'Event within radius',
-            'location_name' => 'Kampus Contoh',
-            'location_address' => 'Jl. Contoh No.1',
+            'title' => 'Konser Terdekat',
+            'description' => 'Konser dalam radius pencarian',
+            'location_name' => 'GBK Jakarta',
+            'location_address' => 'Jl. Pintu Satu Senayan',
             'location_lat' => -6.2,
             'location_lng' => 106.816666,
             'starts_at' => now()->addDays(7),
@@ -31,12 +25,10 @@ class EventLbsTest extends TestCase
             'is_active' => true,
         ]);
 
-        // far event
         Event::create([
-            'organizer_id' => $organizer->id,
-            'title' => 'Far Event',
-            'description' => 'Event outside radius',
-            'location_name' => 'Nowhere',
+            'title' => 'Konser Jauh',
+            'description' => 'Konser di luar radius',
+            'location_name' => 'Lokasi Jauh',
             'location_address' => 'Ocean',
             'location_lat' => 0.0,
             'location_lng' => 0.0,
@@ -52,8 +44,7 @@ class EventLbsTest extends TestCase
 
         $json = $response->json();
 
-        // assert nearby event exists and far event does not
-        $this->assertTrue(collect($json)->contains(fn($e) => $e['title'] === 'Nearby Event'));
-        $this->assertFalse(collect($json)->contains(fn($e) => $e['title'] === 'Far Event'));
+        $this->assertTrue(collect($json)->contains(fn ($e) => $e['title'] === 'Konser Terdekat'));
+        $this->assertFalse(collect($json)->contains(fn ($e) => $e['title'] === 'Konser Jauh'));
     }
 }

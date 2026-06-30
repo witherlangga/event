@@ -21,8 +21,8 @@ class _TicketTypesList extends StatefulWidget {
 
 class _TicketTypesListState extends State<_TicketTypesList> {
   Map<int, int> qty = {};
-  bool _loading = false;
-  String? _error;
+  final Map<int, bool> _loading = {};
+  final Map<int, String?> _error = {};
 
   List<Map<String, dynamic>> _typesFrom(Map<String, dynamic> event) {
     final dynamic t1 = event['ticket_types'] ?? event['ticketTypes'];
@@ -39,7 +39,10 @@ class _TicketTypesListState extends State<_TicketTypesList> {
 
   Future<void> _purchase(int eventId, int ticketTypeId) async {
     final q = qty[ticketTypeId] ?? 1;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading[ticketTypeId] = true;
+      _error[ticketTypeId] = null;
+    });
     try {
       final res = await ApiService.instance.postPurchase(eventId, {'ticket_type_id': ticketTypeId, 'quantity': q});
       if (res.statusCode == 201 || res.statusCode == 200) {
@@ -47,22 +50,21 @@ class _TicketTypesListState extends State<_TicketTypesList> {
         final tickets = parsed is Map && parsed['tickets'] is List ? List<Map<String, dynamic>>.from(parsed['tickets'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderResultScreen(tickets: tickets)));
       } else {
-        setState(() { _error = 'Purchase failed: ${res.statusCode}'; });
+        setState(() { _error[ticketTypeId] = 'Purchase failed: ${res.statusCode}'; });
       }
     } catch (e) {
-      setState(() { _error = e.toString(); });
+      setState(() { _error[ticketTypeId] = e.toString(); });
     } finally {
-      setState(() { _loading = false; });
+      setState(() { _loading[ticketTypeId] = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final types = _typesFrom(widget.event);
-    if (types.isEmpty) return const Text('No ticket types');
+    if (types.isEmpty) return const Text('Belum ada tipe tiket');
     return Column(
       children: [
-        if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
         for (final t in types)
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -83,26 +85,58 @@ class _TicketTypesListState extends State<_TicketTypesList> {
                   Text('Available: ${t['quota'] != null ? (t['quota'] - (t['sold'] ?? 0)) : 'unlimited'}', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 10),
                   Row(children: [
-                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () { setState(() { qty[t['id'] as int] = (qty[t['id'] as int] ?? 1) - 1; if (qty[t['id'] as int]! < 1) qty[t['id'] as int] = 1; }); }),
-                    Text('${qty[t['id'] as int] ?? 1}', style: const TextStyle(fontSize: 16)),
-                    IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () { setState(() { qty[t['id'] as int] = (qty[t['id'] as int] ?? 1) + 1; }); }),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        final ticketId = t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0;
+                        setState(() {
+                          final current = qty[ticketId] ?? 1;
+                          qty[ticketId] = current > 1 ? current - 1 : 1;
+                        });
+                      },
+                    ),
+                    Text('${qty[t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0] ?? 1}', style: const TextStyle(fontSize: 16)),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () {
+                        final ticketId = t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0;
+                        final available = t['quota'] != null ? (int.tryParse(t['quota']?.toString() ?? '0') ?? 0) - (int.tryParse(t['sold']?.toString() ?? '0') ?? 0) : null;
+                        setState(() {
+                          final current = qty[ticketId] ?? 1;
+                          if (available == null || current < available) {
+                            qty[ticketId] = current + 1;
+                          }
+                        });
+                      },
+                    ),
                     const Spacer(),
                   ]),
                   const SizedBox(height: 8),
+                  if (_error[t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        _error[t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0]!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _loading ? null : () {
+                      onPressed: (_loading[t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0] == true) ? null : () {
                         final rawEventId = widget.event['id'];
                         final eventId = rawEventId is int ? rawEventId : (rawEventId != null ? (int.tryParse(rawEventId.toString()) ?? 0) : 0);
                         if (eventId == 0) {
-                          setState(() { _error = 'Invalid event ID'; });
+                          final ticketId = t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0;
+                          setState(() { _error[ticketId] = 'Invalid event ID'; });
                           return;
                         }
-                        _purchase(eventId, t['id'] as int);
+                        _purchase(eventId, t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0);
                       },
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                      child: _loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Buy Ticket'),
+                      child: (_loading[t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '0') ?? 0] == true)
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Beli Tiket'),
                     ),
                   ),
                 ],
@@ -127,8 +161,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final res = await ApiService.instance.getEvent(widget.eventId);
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      if (data is Map<String, dynamic>) return data;
-      if (data is Map && data['data'] is Map) return Map<String, dynamic>.from(data['data']);
+      if (data is Map<String, dynamic>) {
+        final eventData = data['event'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(data['event'] as Map<String, dynamic>)
+            : Map<String, dynamic>.from(data);
+
+        if (data['ticket_types'] is List) {
+          eventData['ticket_types'] = List<Map<String, dynamic>>.from((data['ticket_types'] as List).cast<Map<String, dynamic>>());
+        }
+        if (data['images'] is List) {
+          eventData['images'] = List<Map<String, dynamic>>.from((data['images'] as List).cast<Map<String, dynamic>>());
+        }
+        return eventData;
+      }
+      if (data is Map && data['data'] is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(data['data']);
+      }
     }
     throw Exception('Failed to load event: ${res.statusCode}');
   }
@@ -136,7 +184,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Detail')),
+      appBar: AppBar(title: const Text('Detail Konser')),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _eventFuture,
         builder: (context, snap) {
@@ -192,7 +240,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     child: Padding(padding: const EdgeInsets.all(12.0), child: Text(e['description']?.toString() ?? '')),
                   ),
                   const SizedBox(height: 16),
-                  Text('Ticket Types', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Tipe Tiket', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   _TicketTypesList(event: e),
                 ],

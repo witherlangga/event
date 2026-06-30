@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
 
-final FlutterSecureStorage _storage = const FlutterSecureStorage();
+const FlutterSecureStorage _storage = FlutterSecureStorage();
 
 class AuthState {
   final String? token;
@@ -12,7 +12,7 @@ class AuthState {
 
   AuthState({this.token, this.user});
 
-  bool get isAuthenticated => token != null && token!.isNotEmpty;
+  bool get isAuthenticated => token?.isNotEmpty ?? false;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -27,8 +27,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final res = await ApiService.instance.get('/auth/me');
         if (res.statusCode == 200) {
           final map = jsonDecode(res.body) as Map<String, dynamic>;
-          final userJson = map['user'] as Map<String, dynamic>? ?? map;
-          final user = userJson != null ? UserModel.fromJson(userJson) : null;
+          final userJson = map['user'] is Map<String, dynamic>
+              ? map['user'] as Map<String, dynamic>
+              : map;
+          final user = UserModel.fromJson(userJson);
           state = AuthState(token: t, user: user);
         }
       } catch (_) {

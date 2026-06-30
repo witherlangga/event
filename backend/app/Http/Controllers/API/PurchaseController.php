@@ -72,7 +72,7 @@ class PurchaseController extends Controller
                 'line_total' => $tt->price * $qty,
             ]);
 
-            // Create ticket instances and generate QR codes
+            // Create ticket instances and generate QR codes if possible
             $tickets = [];
             $writer = new PngWriter();
             for ($i = 0; $i < $qty; $i++) {
@@ -84,16 +84,23 @@ class PurchaseController extends Controller
                     'code' => $code,
                 ]);
 
-                // Generate QR PNG containing ticket code (could be a URL or token)
-                $qr = new QrCode($code);
-                $result = $writer->write($qr);
-                $pngData = $result->getString();
+                try {
+                    // Generate QR PNG containing ticket code (could be a URL or token)
+                    $qr = new QrCode($code);
+                    $result = $writer->write($qr);
+                    $pngData = $result->getString();
 
-                $path = 'private/tickets/' . $code . '.png';
-                Storage::disk('local')->put($path, $pngData);
+                    $path = 'private/tickets/' . $code . '.png';
+                    Storage::disk('local')->put($path, $pngData);
 
-                $ticket->qr_path = $path;
-                $ticket->save();
+                    $ticket->qr_path = $path;
+                    $ticket->save();
+                } catch (\Throwable $e) {
+                    // QR generation may fail if GD/driver is missing; continue without QR file.
+                    $ticket->qr_path = null;
+                    $ticket->save();
+                }
+
                 $tickets[] = $ticket;
             }
 

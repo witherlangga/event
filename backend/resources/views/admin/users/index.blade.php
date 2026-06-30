@@ -1,7 +1,7 @@
-@extends('organizer.layout')
+@extends('layouts.panel')
 
 @section('content')
-    <h2>Admin: User Management</h2>
+    <h2>Admin: Manajemen User</h2>
 
     @if(session('success')) <div style="color:green">{{ session('success') }}</div> @endif
 
@@ -30,8 +30,7 @@
                         <form method="POST" action="{{ route('admin.users.update', ['user' => $u->id]) }}" style="display:inline">
                             @csrf
                             <select name="role">
-                                <option value="customer" {{ $u->role === 'customer' ? 'selected' : '' }}>customer</option>
-                                <option value="organizer" {{ $u->role === 'organizer' ? 'selected' : '' }}>organizer</option>
+                                <option value="customer" {{ $u->role === 'customer' ? 'selected' : '' }}>fan (customer)</option>
                                 <option value="system_admin" {{ $u->role === 'system_admin' ? 'selected' : '' }}>system_admin</option>
                             </select>
                             <label>

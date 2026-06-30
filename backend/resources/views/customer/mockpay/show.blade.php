@@ -1,4 +1,4 @@
-@extends('organizer.layout')
+@extends('layouts.panel')
 
 @section('content')
     <h2>Mock Payment for Order #{{ $order->id }}</h2>

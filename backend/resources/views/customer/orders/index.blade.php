@@ -1,4 +1,4 @@
-@extends('organizer.layout')
+@extends('layouts.panel')
 
 @section('content')
     <h2>Your Orders</h2>

@@ -13,13 +13,12 @@ use App\Models\TicketType;
 
 class OrderController extends Controller
 {
-    // List orders (admin sees all, organizer sees orders for their events, customer sees own orders)
+    // List orders (admin sees all, fan sees own orders)
     public function index(Request $request)
     {
         $user = $request->user();
-        $q = Order::with('items.ticketType', 'user', 'event');
+        $q = Order::with('items.ticketType', 'tickets', 'user', 'event');
 
-        // filters
         if ($request->filled('status')) {
             $q->where('status', $request->status);
         }
@@ -33,15 +32,7 @@ class OrderController extends Controller
             });
         }
 
-        if (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin()) {
-            // no extra restriction
-        } elseif (method_exists($user, 'isOrganizer') && $user->isOrganizer()) {
-            // only orders for organizer's events
-            $q->whereHas('event', function ($qe) use ($user) {
-                $qe->where('organizer_id', $user->id);
-            });
-        } else {
-            // customer: only own orders
+        if (! (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin())) {
             $q->where('user_id', $user->id);
         }
 
@@ -52,13 +43,10 @@ class OrderController extends Controller
     public function show(Request $request, Order $order)
     {
         $user = $request->user();
-        $order->load('items.ticketType', 'user', 'event', 'items');
+        $order->load('items.ticketType', 'tickets', 'user', 'event', 'items');
 
-        if (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin()) {
-            // ok
-        } elseif (method_exists($user, 'isOrganizer') && $user->isOrganizer()) {
-            if ($order->event->organizer_id !== $user->id) return response()->json(['message' => 'Unauthorized'], 403);
-        } elseif ($order->user_id !== $user->id) {
+        $isAdmin = method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin();
+        if (! $isAdmin && $order->user_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -160,15 +148,12 @@ class OrderController extends Controller
         return response()->json(['refund' => $refund], 201);
     }
 
-    // Approve and process a requested refund (organizer for their event, or admin)
+    // Approve and process a requested refund (admin only)
     public function approveRefund(Request $request, Refund $refund)
     {
         $user = $request->user();
 
-        $order = $refund->order()->with('event')->first();
-        $isAdmin = method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin();
-        $isOrganizer = method_exists($user, 'isOrganizer') && $user->isOrganizer() && ($order->event->organizer_id === $user->id);
-        if (! ($isAdmin || $isOrganizer)) {
+        if (! (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin())) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -184,7 +169,7 @@ class OrderController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($refund, $tickets, $user, $order) {
+        return DB::transaction(function () use ($refund, $tickets, $user) {
             // decrement sold per ticket type
             foreach ($tickets as $t) {
                 $tt = TicketType::lockForUpdate()->find($t->ticket_type_id);
@@ -220,14 +205,12 @@ class OrderController extends Controller
         });
     }
 
-    // Reject a refund request
+    // Reject a refund request (admin only)
     public function rejectRefund(Request $request, Refund $refund)
     {
         $user = $request->user();
-        $order = $refund->order()->with('event')->first();
-        $isAdmin = method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin();
-        $isOrganizer = method_exists($user, 'isOrganizer') && $user->isOrganizer() && ($order->event->organizer_id === $user->id);
-        if (! ($isAdmin || $isOrganizer)) {
+
+        if (! (method_exists($user, 'isSystemAdmin') && $user->isSystemAdmin())) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

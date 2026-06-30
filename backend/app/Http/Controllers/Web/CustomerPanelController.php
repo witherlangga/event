@@ -34,7 +34,7 @@ class CustomerPanelController extends Controller
     {
         $user = Auth::user();
         if (! $user) {
-            return redirect()->route('organizer.login')->with('error', 'Pilih user untuk impersonate');
+            return redirect()->route('dev.impersonate')->with('error', 'Pilih user untuk impersonate');
         }
 
         $data = $request->validate([
