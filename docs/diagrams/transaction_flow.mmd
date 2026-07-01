@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant Mobile
+    participant API
+    participant DB
+    participant Storage
+    participant PG as PaymentGateway
+
+    Mobile->>API: POST /events/{event}/purchase
+    API->>DB: BEGIN + lock ticket_type
+    DB-->>API: lock ok
+    API->>DB: increment sold, create order+order_item
+    DB-->>API: COMMIT
+    API-->>Mobile: 201 {order_id}
+
+    Mobile->>API: POST /orders/{order}/payment/qris
+    API->>API: generate QRIS, write PNG
+    API->>Storage: put private/payments/{order}.png
+    API-->>Mobile: 200 {qr_url (signed)}
+
+    Mobile->>Storage: GET signed qr_url
+    Storage-->>Mobile: image/png
+
+    Mobile->>PG: user scans & pays
+    PG-->>API: (webhook) payment success
+    API->>DB: BEGIN
+    API->>DB: if order.pending -> update status=paid, paid_at
+    API->>DB: create ticket records
+    API->>Storage: write ticket QR images
+    DB-->>API: COMMIT
+    API-->>Mobile: payment status=paid

@@ -1,0 +1,119 @@
+@startuml
+entity "users" as users {
+  *id : bigint
+  --
+  name : varchar
+  email : varchar
+  password : varchar
+  role : enum(system_admin, organizer, customer)
+  phone : varchar
+  profile_photo_path : varchar
+  bio : text
+  location_lat : decimal(10,7)
+  location_lng : decimal(10,7)
+  is_active : boolean
+  email_verified_at : timestamp
+  remember_token : varchar
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "events" as events {
+  *id : bigint
+  --
+  organizer_id : bigint
+  title : varchar
+  description : text
+  location_name : varchar
+  location_address : varchar
+  location_lat : decimal(10,7)
+  location_lng : decimal(10,7)
+  starts_at : timestamp
+  ends_at : timestamp
+  capacity : int
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "ticket_types" as ticket_types {
+  *id : bigint
+  --
+  event_id : bigint
+  name : varchar
+  description : text
+  price : decimal(10,2)
+  quota : int
+  sold : int
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "orders" as orders {
+  *id : bigint
+  --
+  user_id : bigint
+  event_id : bigint
+  total_price : decimal(12,2)
+  status : enum(pending, paid, cancelled)
+  payment_qr_data : text
+  payment_deadline : timestamp
+  paid_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "order_items" as order_items {
+  *id : bigint
+  --
+  order_id : bigint
+  ticket_type_id : bigint
+  quantity : int
+  unit_price : decimal(10,2)
+  line_total : decimal(12,2)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "tickets" as tickets {
+  *id : bigint
+  --
+  order_id : bigint
+  order_item_id : bigint
+  ticket_type_id : bigint
+  code : varchar
+  qr_path : varchar
+  used : boolean
+  used_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "refunds" as refunds {
+  *id : bigint
+  --
+  order_id : bigint
+  processed_by : bigint
+  requested_by : bigint
+  amount : decimal(12,2)
+  reason : text
+  status : enum(requested, approved, rejected, processed)
+  processed_at : timestamp
+  ticket_ids : json
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+users ||--o{ events : organizes
+users ||--o{ orders : places
+users ||--o{ refunds : requested_by
+users ||--o{ refunds : processed_by
+events ||--o{ ticket_types : contains
+orders ||--o{ order_items : contains
+order_items ||--o{ tickets : generates
+orders ||--o{ tickets : includes
+orders ||--o{ refunds : may_have
+ticket_types ||--o{ order_items : is_priced_by
+ticket_types ||--o{ tickets : issues
+@enduml

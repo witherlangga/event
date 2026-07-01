@@ -1,0 +1,16 @@
+@startuml
+skinparam rectangle {
+  BorderColor black
+  BackgroundColor #F2F2F2
+}
+rectangle "Event List" as EventList
+rectangle "Event Detail" as EventDetail
+rectangle "Purchase Screen" as PurchaseScreen
+rectangle "Payment Screen" as PaymentScreen
+rectangle "Ticket Screen" as TicketScreen
+
+EventList --> EventDetail
+EventDetail --> PurchaseScreen
+PurchaseScreen --> PaymentScreen
+PaymentScreen --> TicketScreen
+@enduml

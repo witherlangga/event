@@ -99,6 +99,24 @@ class ApiService {
   Future<http.Response> getAdminConcerts() => get('/admin/concerts');
   Future<http.Response> postPurchase(int eventId, Map<String, dynamic> body) => post('/events/$eventId/purchase', body: body);
 
+  Future<http.Response> generatePaymentQris(int orderId) async {
+    final uri = Uri.parse('$baseUrl/orders/$orderId/payment/qris');
+    final h = await _defaultHeaders();
+    return http.post(uri, headers: h);
+  }
+
+  Future<http.Response> getPaymentStatus(int orderId) async {
+    final uri = Uri.parse('$baseUrl/orders/$orderId/payment/status');
+    final h = await _defaultHeaders();
+    return http.get(uri, headers: h);
+  }
+
+  Future<http.Response> confirmPayment(int orderId) async {
+    final uri = Uri.parse('$baseUrl/orders/$orderId/payment/confirm');
+    final h = await _defaultHeaders();
+    return http.post(uri, headers: h);
+  }
+
   Future<http.Response> getTicketQr(int ticketId) async {
     final uri = Uri.parse('$baseUrl/tickets/$ticketId/qr');
     final h = await _defaultHeaders();

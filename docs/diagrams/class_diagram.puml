@@ -1,0 +1,45 @@
+@startuml
+class User {
+  +int id
+  +string name
+  +string email
+  +string role
+}
+class Event {
+  +int id
+  +string title
+  +datetime start_at
+}
+class TicketType {
+  +int id
+  +int event_id
+  +decimal price
+  +int quota
+  +int sold
+}
+class Order {
+  +int id
+  +int user_id
+  +int event_id
+  +decimal total_price
+  +string status
+  +datetime payment_deadline
+}
+class OrderItem {
+  +int id
+  +int order_id
+  +int ticket_type_id
+  +int quantity
+}
+class Ticket {
+  +int id
+  +int order_id
+  +string code
+  +string qr_path
+}
+
+User "1" -- "*" Order
+Event "1" -- "*" TicketType
+Order "1" -- "*" OrderItem
+OrderItem "1" -- "*" Ticket
+@enduml

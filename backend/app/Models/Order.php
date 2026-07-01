@@ -9,7 +9,12 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'event_id', 'total_price', 'status'];
+    protected $fillable = ['user_id', 'event_id', 'total_price', 'status', 'payment_qr_data', 'payment_deadline', 'paid_at'];
+
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'payment_deadline' => 'datetime',
+    ];
 
     public function items()
     {

@@ -1,0 +1,24 @@
+@startuml
+start
+:Select Event and Ticket;
+:Submit Purchase Request;
+if (Quota Available?) then (yes)
+  :Create Pending Order;
+  :Generate Payment QR;
+  :Wait for Payment;
+  if (Payment Received?) then (yes)
+    :Confirm Payment and Create Tickets;
+    stop
+  else (no)
+    if (Deadline Expired?) then (yes)
+      :Cancel Order and Release Stock;
+      stop
+    else (no)
+      :Wait for Payment;
+    endif
+  endif
+else (no)
+  :Show Insufficient Quota;
+  stop
+endif
+@enduml

@@ -101,6 +101,10 @@ Route::get('tickets/{ticket}/qr/download', [\App\Http\Controllers\API\TicketCont
     ->name('tickets.qr.download')
     ->middleware(['signed']);
 
+Route::get('payment/qr/download/{order}', [\App\Http\Controllers\API\PaymentController::class, 'downloadQr'])
+    ->name('payment.qr.download')
+    ->middleware(['signed']);
+
 Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function () {
     Route::get('orders', [\App\Http\Controllers\API\OrderController::class, 'index']);
     Route::get('orders/{order}', [\App\Http\Controllers\API\OrderController::class, 'show']);
@@ -109,4 +113,9 @@ Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function (
     Route::post('orders/{order}/request-refund', [\App\Http\Controllers\API\OrderController::class, 'requestRefund']);
     Route::post('refunds/{refund}/approve', [\App\Http\Controllers\API\OrderController::class, 'approveRefund']);
     Route::post('refunds/{refund}/reject', [\App\Http\Controllers\API\OrderController::class, 'rejectRefund']);
+    
+    // Payment endpoints
+    Route::post('orders/{order}/payment/qris', [\App\Http\Controllers\API\PaymentController::class, 'generateQris']);
+    Route::get('orders/{order}/payment/status', [\App\Http\Controllers\API\PaymentController::class, 'checkStatus']);
+    Route::post('orders/{order}/payment/confirm', [\App\Http\Controllers\API\PaymentController::class, 'confirmPayment']);
 });

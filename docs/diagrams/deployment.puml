@@ -1,0 +1,14 @@
+@startuml
+!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/Advanced/AWSPUML
+title Deployment Diagram
+node "Load Balancer" as LB
+node "App Servers (Laravel)" as App
+database "Relational DB (RDS)" as DB
+node "S3 / Object Storage" as S3
+node "Payment Gateway (external)" as PG
+
+LB --> App
+App --> DB
+App --> S3
+PG --> App : webhook
+@enduml

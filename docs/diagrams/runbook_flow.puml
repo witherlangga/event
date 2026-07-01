@@ -1,0 +1,15 @@
+@startuml
+title Runbook: Expired Order Cleanup
+start
+:Query orders where status='pending' and payment_deadline < now();
+if (No expired orders?) then (yes)
+  stop
+else (no)
+  :For each expired order -> Begin transaction;
+  :Set order.status = 'cancelled';
+  :For each order_item -> decrement ticket_type.sold by quantity;
+  :Commit transaction;
+  :Log actions and metrics;
+endif
+stop
+@enduml

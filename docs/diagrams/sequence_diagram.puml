@@ -1,0 +1,28 @@
+@startuml
+actor Mobile
+participant API
+database DB
+participant Storage
+participant PG as "Payment Gateway"
+
+Mobile -> API: POST /events/{event}/purchase
+API -> DB: BEGIN; SELECT ticket_type FOR UPDATE
+DB --> API: lock acquired
+API -> DB: update sold, create order + order_items
+DB --> API: COMMIT
+API --> Mobile: 201 {order_id}
+
+Mobile -> API: POST /orders/{order}/payment/qris
+API -> Storage: save payment QR image
+API --> Mobile: 200 {qr_url}
+
+Mobile -> Storage: GET signed qr_url
+Storage --> Mobile: image/png
+
+PG --> API: webhook payment success
+API -> DB: BEGIN
+API -> DB: update order status to paid
+API -> DB: create tickets
+DB --> API: COMMIT
+API --> Mobile: payment status=paid
+@enduml

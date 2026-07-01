@@ -1,0 +1,10 @@
+flowchart TD
+  Start --> Query[Query orders where status='pending' and payment_deadline < now()]
+  Query --> Check{No expired orders?}
+  Check -- Yes --> End[Stop]
+  Check -- No --> Process[For each expired order: Begin transaction]
+  Process --> Cancel[Set order.status = 'cancelled']
+  Cancel --> Decrement[Decrement ticket_type.sold by quantity]
+  Decrement --> Commit[Commit transaction]
+  Commit --> Log[Log actions and metrics]
+  Log --> End

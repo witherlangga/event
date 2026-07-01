@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'order_result_screen.dart';
+import 'payment_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final int eventId;
@@ -47,8 +47,29 @@ class _TicketTypesListState extends State<_TicketTypesList> {
       final res = await ApiService.instance.postPurchase(eventId, {'ticket_type_id': ticketTypeId, 'quantity': q});
       if (res.statusCode == 201 || res.statusCode == 200) {
         final parsed = jsonDecode(res.body);
+        final order = parsed is Map && parsed['order'] is Map ? Map<String, dynamic>.from(parsed['order'] as Map) : null;
         final tickets = parsed is Map && parsed['tickets'] is List ? List<Map<String, dynamic>>.from(parsed['tickets'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderResultScreen(tickets: tickets)));
+        
+        if (order != null) {
+          final orderId = order['id'] as int?;
+          final totalPrice = (order['total_price'] as num?)?.toDouble() ?? 0.0;
+          
+          if (orderId != null && totalPrice > 0) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PaymentScreen(
+                  orderId: orderId,
+                  totalAmount: totalPrice,
+                  tickets: tickets,
+                ),
+              ),
+            );
+          } else {
+            setState(() { _error[ticketTypeId] = 'Invalid order data'; });
+          }
+        } else {
+          setState(() { _error[ticketTypeId] = 'No order data received'; });
+        }
       } else {
         setState(() { _error[ticketTypeId] = 'Purchase failed: ${res.statusCode}'; });
       }

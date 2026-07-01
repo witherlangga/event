@@ -1,0 +1,15 @@
+@startuml
+left to right direction
+actor Customer
+actor Admin
+
+Customer --> (Login/Register)
+Customer --> (View Events)
+Customer --> (Purchase Tickets)
+Customer --> (Generate Payment QR)
+Customer --> (Check Payment Status)
+Customer --> (View Tickets)
+
+Admin --> (Manage Events)
+Admin --> (Confirm Payment)
+@enduml

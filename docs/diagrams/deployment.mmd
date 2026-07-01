@@ -1,0 +1,6 @@
+flowchart LR
+  Mobile[Mobile App (Flutter)] -->|HTTPS| LB[Load Balancer]
+  LB --> App[Laravel App Servers]
+  App --> DB[(Relational DB)]
+  App --> S3[(S3 / Object Storage)]
+  PG[Payment Gateway] -->|webhook| App

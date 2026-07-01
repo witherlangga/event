@@ -12,9 +12,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Ticket;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\QrCode;
 
 class PurchaseController extends Controller
 {
@@ -56,12 +53,12 @@ class PurchaseController extends Controller
             $tt->sold += $qty;
             $tt->save();
 
-            // Create order
+            // Create order (status pending until payment confirmed)
             $order = Order::create([
                 'user_id' => $request->user()->id,
                 'event_id' => $event->id,
                 'total_price' => $tt->price * $qty,
-                'status' => 'paid',
+                'status' => 'pending',
             ]);
 
             $item = OrderItem::create([
@@ -72,41 +69,11 @@ class PurchaseController extends Controller
                 'line_total' => $tt->price * $qty,
             ]);
 
-            // Create ticket instances and generate QR codes if possible
-            $tickets = [];
-            $writer = new PngWriter();
-            for ($i = 0; $i < $qty; $i++) {
-                $code = Str::uuid()->toString();
-                $ticket = Ticket::create([
-                    'order_id' => $order->id,
-                    'order_item_id' => $item->id,
-                    'ticket_type_id' => $tt->id,
-                    'code' => $code,
-                ]);
-
-                try {
-                    // Generate QR PNG containing ticket code (could be a URL or token)
-                    $qr = new QrCode($code);
-                    $result = $writer->write($qr);
-                    $pngData = $result->getString();
-
-                    $path = 'private/tickets/' . $code . '.png';
-                    Storage::disk('local')->put($path, $pngData);
-
-                    $ticket->qr_path = $path;
-                    $ticket->save();
-                } catch (\Throwable $e) {
-                    // QR generation may fail if GD/driver is missing; continue without QR file.
-                    $ticket->qr_path = null;
-                    $ticket->save();
-                }
-
-                $tickets[] = $ticket;
-            }
-
             $order->load('items');
 
-            return response()->json(['order' => $order, 'tickets' => $tickets], 201);
+            // Return order with pending payment status.
+            // Note: tickets (physical QR files) will be created when payment is confirmed.
+            return response()->json(['order' => $order], 201);
         });
     }
 }

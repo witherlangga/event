@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: EventTickets - Purchase & Payment API
+  version: 1.0.0
+  description: OpenAPI spec for purchase and payment endpoints
+servers:
+  - url: http://localhost:8000/api
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    PurchaseRequest:
+      type: object
+      required: [ticket_type_id, quantity]
+      properties:
+        ticket_type_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        ticket_type_id:
+          type: integer
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+          format: double
+        line_total:
+          type: number
+          format: double
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        event_id:
+          type: integer
+        total_price:
+          type: number
+          format: double
+        status:
+          type: string
+          enum: [pending, paid, cancelled]
+        payment_deadline:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    PaymentQrisResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        amount:
+          type: number
+          format: double
+        qr_url:
+          type: string
+        payment_deadline:
+          type: string
+          format: date-time
+    PaymentStatusResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        status:
+          type: string
+        amount:
+          type: number
+          format: double
+        payment_deadline:
+          type: string
+          format: date-time
+        paid_at:
+          type: string
+          format: date-time
+        remaining_time:
+          type: integer
+          description: remaining minutes
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+        code:
+          type: string
+        qr_path:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+security:
+  - bearerAuth: []
+paths:
+  /events/{event}/purchase:
+    post:
+      summary: Create an order (reserve stock)
+      parameters:
+        - name: event
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseRequest'
+      responses:
+        '201':
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '422':
+          description: Validation error / not enough quota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+  /orders/{order}/payment/qris:
+    post:
+      summary: Generate payment QR (QRIS)
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: QR generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentQrisResponse'
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden
+  /orders/{order}/payment/status:
+    get:
+      summary: Get payment status for an order
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+        '403':
+          description: Forbidden
+  /orders/{order}/payment/confirm:
+    post:
+      summary: Confirm payment (idempotent)
+      parameters:
+        - name: order
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  order:
+                    $ref: '#/components/schemas/Order'
+                  tickets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Bad request / already processed
+        '403':
+          description: Forbidden
+        '422':
+          description: Validation error
