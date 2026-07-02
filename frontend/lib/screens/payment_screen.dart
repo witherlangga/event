@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import 'order_result_screen.dart';
 
@@ -24,17 +25,21 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   Uint8List? _qrImage;
+  String? _checkoutUrl;
   bool _loading = true;
+  bool _confirming = false;
   String? _error;
   DateTime? _deadline;
   Timer? _statusCheckTimer;
   int? _remainingMinutes;
   bool _paid = false;
+  String _selectedMethod = 'qris';
+  String? _selectedBank;
 
   @override
   void initState() {
     super.initState();
-    _generateQris();
+    _initializePayment();
   }
 
   @override
@@ -43,32 +48,58 @@ class _PaymentScreenState extends State<PaymentScreen> {
     super.dispose();
   }
 
-  Future<void> _generateQris() async {
+  Future<void> _initializePayment() async {
     try {
-      setState(() => _loading = true);
-      final res = await ApiService.instance.generatePaymentQris(widget.orderId);
+      setState(() {
+        _loading = true;
+        _qrImage = null;
+        _checkoutUrl = null;
+        _error = null;
+      });
+
+      final res = await ApiService.instance.initializePayment(
+        widget.orderId,
+        _selectedMethod,
+        bankCode: _selectedBank,
+      );
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final qrUrl = data['qr_url'] as String?;
+        final paymentData = data['payment_data'] as Map<String, dynamic>?;
         final deadline = data['payment_deadline'] as String?;
 
-        if (qrUrl != null) {
-          // Download QR image
-          final qrRes = await ApiService.instance.get(qrUrl.replaceAll(RegExp(r'.*api/'), '/'));
-          if (qrRes.statusCode == 200) {
+        setState(() {
+          _deadline = deadline != null ? DateTime.parse(deadline) : null;
+        });
+
+        if (paymentData != null) {
+          final qrUrl = paymentData['qr_code_url'] as String?;
+          final checkoutUrl = paymentData['payment_url'] as String?;
+
+          if (qrUrl != null) {
+            final qrRes = await ApiService.instance.get(qrUrl);
+            if (qrRes.statusCode == 200) {
+              setState(() {
+                _qrImage = qrRes.bodyBytes;
+              });
+              _startStatusCheck();
+              return;
+            }
+            final message = _extractErrorMessage(qrRes.body) ?? 'Failed to load QR image (${qrRes.statusCode})';
+            setState(() => _error = message);
+          } else if (checkoutUrl != null) {
             setState(() {
-              _qrImage = qrRes.bodyBytes;
-              _deadline = deadline != null ? DateTime.parse(deadline) : null;
+              _checkoutUrl = checkoutUrl;
             });
-            // Start polling for payment status
             _startStatusCheck();
-          } else {
-            setState(() => _error = 'Failed to load QR image');
+            return;
           }
         }
+
+        setState(() => _error = 'Gateway response did not include payment link or QR code');
       } else {
-        setState(() => _error = 'Failed to generate payment QR');
+        final message = _extractErrorMessage(res.body) ?? 'Failed to initialize payment (${res.statusCode})';
+        setState(() => _error = message);
       }
     } catch (e) {
       setState(() => _error = e.toString());
@@ -112,6 +143,41 @@ class _PaymentScreenState extends State<PaymentScreen> {
     });
   }
 
+  Future<void> _confirmPayment() async {
+    if (_confirming || _paid) return;
+
+    setState(() {
+      _confirming = true;
+      _error = null;
+    });
+
+    try {
+      final res = await ApiService.instance.confirmPayment(widget.orderId);
+      if (res.statusCode == 200) {
+        setState(() {
+          _paid = true;
+          _statusCheckTimer?.cancel();
+        });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => OrderResultScreen(tickets: widget.tickets),
+              ),
+            );
+          }
+        });
+      } else {
+        final message = _extractErrorMessage(res.body) ?? 'Failed to confirm payment (${res.statusCode})';
+        setState(() => _error = message);
+      }
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _confirming = false);
+    }
+  }
+
   String _formatRemainingTime(int? minutes) {
     if (minutes == null || minutes <= 0) return 'Expired';
     if (minutes >= 60) {
@@ -129,6 +195,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
       decimalDigits: 0,
     );
     return formatter.format(amount.toInt());
+  }
+
+  String? _extractErrorMessage(String body) {
+    try {
+      final data = jsonDecode(body);
+      if (data is Map<String, dynamic>) {
+        if (data['message'] is String) return data['message'] as String;
+        if (data['errors'] != null) return data['errors'].toString();
+      }
+    } catch (_) {
+      // ignore invalid JSON
+    }
+    return null;
+  }
+
+  Future<void> _openCheckoutUrl() async {
+    if (_checkoutUrl == null) return;
+    final uri = Uri.tryParse(_checkoutUrl!);
+    if (uri == null) {
+      setState(() => _error = 'Invalid payment URL');
+      return;
+    }
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      setState(() => _error = 'Unable to open payment link');
+    }
   }
 
   @override
@@ -166,6 +258,72 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Pilih Metode Pembayaran',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _selectedMethod,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'qris', child: Text('QRIS')),
+                        DropdownMenuItem(value: 'dana', child: Text('DANA')),
+                        DropdownMenuItem(value: 'gopay', child: Text('GoPay')),
+                        DropdownMenuItem(value: 'ovo', child: Text('OVO')),
+                        DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _selectedMethod = value;
+                          if (value != 'bank_transfer') {
+                            _selectedBank = null;
+                          }
+                        });
+                      },
+                    ),
+                    if (_selectedMethod == 'bank_transfer') ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selectedBank,
+                        decoration: const InputDecoration(
+                          labelText: 'Pilih Bank',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'bca', child: Text('BCA')),
+                          DropdownMenuItem(value: 'bri', child: Text('BRI')),
+                          DropdownMenuItem(value: 'bni', child: Text('BNI')),
+                          DropdownMenuItem(value: 'mandiri', child: Text('Mandiri')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedBank = value;
+                          });
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    ElevatedButton(
+                      onPressed: _loading ? null : _initializePayment,
+                      child: const Text('Mulai Pembayaran'),
                     ),
                   ],
                 ),
@@ -264,7 +422,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: _generateQris,
+                        onPressed: _initializePayment,
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry'),
                       ),
@@ -284,6 +442,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   ],
                 ),
+              )
+            else if (_checkoutUrl != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Pembayaran siap dilakukan:',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _openCheckoutUrl,
+                      child: const Text('Buka Aplikasi Pembayaran'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Jika aplikasi tidak terbuka otomatis, gunakan tombol di atas untuk melanjutkan pembayaran.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               )
             else if (_qrImage != null)
               Column(
@@ -339,6 +521,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ],
               ),
+            if ((_qrImage != null || _checkoutUrl != null) && !_paid) ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _confirming ? null : _confirmPayment,
+                  icon: _confirming
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_circle_outline),
+                  label: Text(_confirming ? 'Confirming payment...' : 'Already paid, finish transaction'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

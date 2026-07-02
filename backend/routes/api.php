@@ -105,6 +105,8 @@ Route::get('payment/qr/download/{order}', [\App\Http\Controllers\API\PaymentCont
     ->name('payment.qr.download')
     ->middleware(['signed']);
 
+Route::post('payment/webhook', [\App\Http\Controllers\API\PaymentController::class, 'webhook']);
+
 Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function () {
     Route::get('orders', [\App\Http\Controllers\API\OrderController::class, 'index']);
     Route::get('orders/{order}', [\App\Http\Controllers\API\OrderController::class, 'show']);
@@ -115,6 +117,7 @@ Route::middleware([\App\Http\Middleware\JwtMiddleware::class])->group(function (
     Route::post('refunds/{refund}/reject', [\App\Http\Controllers\API\OrderController::class, 'rejectRefund']);
     
     // Payment endpoints
+    Route::post('orders/{order}/payment/init', [\App\Http\Controllers\API\PaymentController::class, 'initializePayment']);
     Route::post('orders/{order}/payment/qris', [\App\Http\Controllers\API\PaymentController::class, 'generateQris']);
     Route::get('orders/{order}/payment/status', [\App\Http\Controllers\API\PaymentController::class, 'checkStatus']);
     Route::post('orders/{order}/payment/confirm', [\App\Http\Controllers\API\PaymentController::class, 'confirmPayment']);

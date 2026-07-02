@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Ticket;
+use App\Services\PaymentGatewayService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Endroid\QrCode\Writer\PngWriter;
@@ -18,6 +19,83 @@ class PaymentController extends Controller
      * Generate QRIS QR code for an order.
      * QRIS format: 00020126360007ID.CO.MANDIRI01189370010300006154970208NMMID10254285957769520400005303360614Rp_AMOUNT6304XXXX
      */
+    public function initializePayment(Request $request, Order $order)
+    {
+        $user = $request->user();
+
+        if ($order->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Order already paid or cancelled'], 400);
+        }
+
+        $paymentMethod = $request->input('payment_method', 'qris');
+        $bank = $request->input('bank');
+
+        try {
+            $gateway = new PaymentGatewayService();
+            $paymentData = $gateway->createPayment($order, $paymentMethod, $bank);
+
+            return response()->json([
+                'order_id' => $order->id,
+                'amount' => $order->total_price,
+                'payment_method' => $paymentMethod,
+                'payment_data' => $paymentData,
+                'payment_deadline' => $order->payment_deadline,
+            ]);
+        } catch (\Throwable $e) {
+            if (str_contains($e->getMessage(), 'Payment gateway is not configured')) {
+                $paymentData = $this->createLocalPaymentData($order);
+
+                return response()->json([
+                    'order_id' => $order->id,
+                    'amount' => $order->total_price,
+                    'payment_method' => 'qris',
+                    'payment_data' => $paymentData,
+                    'payment_deadline' => $order->payment_deadline,
+                    'message' => 'Payment gateway not configured, using local QRIS fallback. Scan the QR and confirm payment manually.',
+                ]);
+            }
+
+            return response()->json(['message' => 'Failed to initialize payment: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function createLocalPaymentData(Order $order): array
+    {
+        $qrisData = $this->generateQrisData($order->total_price);
+        $writer = new PngWriter();
+        $qr = new QrCode($qrisData);
+        $result = $writer->write($qr);
+        $pngData = $result->getString();
+
+        $path = 'private/payments/' . $order->id . '.png';
+        Storage::disk('local')->put($path, $pngData);
+
+        if (!$order->payment_deadline) {
+            $order->payment_deadline = now()->addHours(24);
+        }
+
+        $order->update([
+            'payment_qr_data' => $qrisData,
+            'payment_deadline' => $order->payment_deadline,
+        ]);
+
+        $signedUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'payment.qr.download',
+            now()->addMinutes(5),
+            ['order' => $order->id]
+        );
+
+        return [
+            'qr_code_url' => $signedUrl,
+            'qris_data' => $qrisData,
+            'fallback_local' => true,
+        ];
+    }
+
     public function generateQris(Request $request, Order $order)
     {
         $user = $request->user();
@@ -143,16 +221,73 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Order already processed'], 400);
         }
 
+        $createdTickets = $this->processOrderPayment($order);
+
+        return response()->json([
+            'message' => 'Payment confirmed',
+            'order' => $order->fresh(),
+            'tickets' => $createdTickets,
+        ]);
+    }
+
+    /**
+     * Handle automatic webhook callbacks from payment gateway.
+     *
+     * Expected payload example:
+     * {
+     *   "order_id": 123,
+     *   "status": "paid"
+     * }
+     *
+     * The payment gateway should send a secret header:
+     * X-Payment-Webhook-Secret: <PAYMENT_WEBHOOK_SECRET>
+     */
+    public function webhook(Request $request)
+    {
+        $secret = env('PAYMENT_WEBHOOK_SECRET');
+        if ($secret && $request->header('X-Payment-Webhook-Secret') !== $secret) {
+            return response()->json(['message' => 'Invalid webhook secret'], 403);
+        }
+
+        $orderId = $request->input('order_id');
+        $status = $request->input('status');
+
+        if (!$orderId || !$status) {
+            return response()->json(['message' => 'Invalid webhook payload'], 400);
+        }
+
+        $order = Order::find($orderId);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Order already processed'], 400);
+        }
+
+        if ($status !== 'paid') {
+            return response()->json(['message' => 'Webhook status not handled'], 200);
+        }
+
+        $createdTickets = $this->processOrderPayment($order);
+
+        return response()->json([
+            'message' => 'Webhook processed',
+            'order' => $order->fresh(),
+            'tickets' => $createdTickets,
+        ]);
+    }
+
+    private function processOrderPayment(Order $order)
+    {
         $createdTickets = [];
 
         DB::transaction(function () use ($order, &$createdTickets) {
-            // Mark order as paid
             $order->update([
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
 
-            // Create ticket instances for each order item
             $order->load('items');
             $writer = new PngWriter();
 
@@ -186,11 +321,7 @@ class PaymentController extends Controller
             }
         });
 
-        return response()->json([
-            'message' => 'Payment confirmed',
-            'order' => $order->fresh(),
-            'tickets' => $createdTickets,
-        ]);
+        return $createdTickets;
     }
 
     /**

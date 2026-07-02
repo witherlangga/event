@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,7 +8,17 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  final String baseUrl = 'http://localhost:8000/api';
+  String get baseUrl {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final scheme = uri.scheme.isNotEmpty && uri.scheme != 'file' ? uri.scheme : 'http';
+      final host = uri.host.isNotEmpty ? uri.host : 'localhost';
+      return '$scheme://$host:8000/api';
+    }
+
+    return 'http://localhost:8000/api';
+  }
+
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _defaultHeaders() async {
@@ -40,7 +51,9 @@ class ApiService {
   }
 
   Future<http.Response> get(String path, {Map<String, String>? headers}) async {
-    final uri = Uri.parse('$baseUrl$path');
+    final uri = path.startsWith('http://') || path.startsWith('https://')
+        ? Uri.parse(path)
+        : Uri.parse('$baseUrl$path');
     final h = await _defaultHeaders();
     if (headers != null) h.addAll(headers);
     return http.get(uri, headers: h);
@@ -98,6 +111,13 @@ class ApiService {
   Future<http.Response> getOrder(int id) => get('/orders/$id');
   Future<http.Response> getAdminConcerts() => get('/admin/concerts');
   Future<http.Response> postPurchase(int eventId, Map<String, dynamic> body) => post('/events/$eventId/purchase', body: body);
+
+  Future<http.Response> initializePayment(int orderId, String paymentMethod, {String? bankCode}) async {
+    return post('/orders/$orderId/payment/init', body: {
+      'payment_method': paymentMethod,
+      if (bankCode != null) 'bank': bankCode,
+    });
+  }
 
   Future<http.Response> generatePaymentQris(int orderId) async {
     final uri = Uri.parse('$baseUrl/orders/$orderId/payment/qris');
