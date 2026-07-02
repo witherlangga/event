@@ -2,10 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\CustomerPanelController;
+use App\Models\Event;
 use App\Models\User;
 
 Route::get('/', function () {
-    return view('welcome');
+    $events = Event::where('is_active', true)
+        ->orderBy('starts_at')
+        ->take(4)
+        ->get();
+    return view('local_web', compact('events'));
 });
 
 // Dev impersonation (testing web UI)
