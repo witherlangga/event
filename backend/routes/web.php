@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\CustomerPanelController;
+use App\Http\Controllers\Web\AuthController;
 use App\Models\Event;
 use App\Models\User;
 
@@ -12,7 +13,12 @@ Route::get('/', function () {
         ->get();
     return view('local_web', compact('events'));
 });
-
+// Authentication routes
+Route::get('login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('login', [AuthController::class, 'login'])->name('login.submit');
+Route::get('register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('register', [AuthController::class, 'register'])->name('register.submit');
+Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 // Dev impersonation (testing web UI)
 Route::get('dev/impersonate', function () {
     $users = User::orderBy('name')->get();
@@ -35,7 +41,7 @@ Route::post('dev/logout-impersonate', function () {
     return redirect()->route('dev.impersonate');
 })->name('dev.logout-impersonate');
 
-Route::middleware([\App\Http\Middleware\Impersonate::class])->group(function () {
+Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Middleware\RoleMiddleware::class.':customer'])->group(function () {
     Route::get('customer/events', [CustomerPanelController::class, 'index'])->name('customer.events');
     Route::get('customer/events/{event}', [CustomerPanelController::class, 'show'])->name('customer.events.show');
     Route::post('customer/events/{event}/purchase', [CustomerPanelController::class, 'purchase'])->name('customer.events.purchase');
@@ -45,7 +51,9 @@ Route::middleware([\App\Http\Middleware\Impersonate::class])->group(function () 
     Route::get('customer/orders', [CustomerPanelController::class, 'orders'])->name('customer.orders');
     Route::get('customer/orders/{order}', [CustomerPanelController::class, 'orderShow'])->name('customer.orders.show');
     Route::post('customer/orders/{order}/request-refund', [CustomerPanelController::class, 'requestRefund'])->name('customer.orders.request_refund');
+});
 
+Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Middleware\RoleMiddleware::class.':system_admin'])->group(function () {
     Route::get('admin/users', [\App\Http\Controllers\Web\Admin\UserController::class, 'index'])->name('admin.users');
     Route::post('admin/users/{user}', [\App\Http\Controllers\Web\Admin\UserController::class, 'update'])->name('admin.users.update');
     Route::post('admin/users/{user}/delete', [\App\Http\Controllers\Web\Admin\UserController::class, 'delete'])->name('admin.users.delete');

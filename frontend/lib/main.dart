@@ -14,6 +14,7 @@ import 'screens/news_screen.dart';
 import 'screens/members_screen.dart';
 import 'screens/discography_screen.dart';
 import 'screens/gallery_screen.dart';
+import 'screens/hero_screen_3d.dart';
 import 'constants/app_constants.dart';
 import 'theme.dart';
 
@@ -47,6 +48,7 @@ class MyApp extends ConsumerWidget {
         '/members': (_) => const MembersScreen(),
         '/discography': (_) => const DiscographyScreen(),
         '/gallery': (_) => const GalleryScreen(),
+        '/hero-3d': (_) => const Hero3DScreen(),
       },
     );
   }

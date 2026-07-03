@@ -1,79 +1,176 @@
 @extends('layouts.panel')
 
 @section('content')
-    <h2>Order #{{ $order->id }}</h2>
-    <p>Total: {{ $order->total_price }} - Status: {{ $order->status }}</p>
+    <div class="section">
+        <!-- Order Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 style="margin: 0;">Order #{{ $order->id }}</h2>
+                <span class="badge badge-{{ $order->status == 'completed' ? 'success' : ($order->status == 'pending' ? 'warning' : 'danger') }}">
+                    {{ ucfirst($order->status) }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-3" style="gap: 20px;">
+                    <div>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Order Date</p>
+                        <p style="margin: 8px 0 0 0; color: white; font-weight: 600;">{{ optional($order->created_at)->format('M d, Y H:i') ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Total Amount</p>
+                        <p style="margin: 8px 0 0 0; color: #00FF88; font-weight: 700; font-size: 1.25rem;">Rp {{ number_format($order->total_price) }}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Tickets Count</p>
+                        <p style="margin: 8px 0 0 0; color: white; font-weight: 600;">{{ $order->order_items_count ?? 0 }} Ticket(s)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <h3>Tickets</h3>
-    <form method="POST" action="{{ route('customer.orders.request_refund', ['order' => $order->id]) }}">
-        @csrf
-        @if($tickets->isEmpty())
-            <p>No tickets found.</p>
-        @else
-            <ul>
-                @foreach($tickets as $t)
-                    <li style="cursor:pointer;" onclick="(function(e){ e = e || window.event; var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : ''; if(tag==='input' || tag==='a' || tag==='button') return; var cb = this.querySelector('input[type=checkbox]'); if(cb && !cb.disabled){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); } }).call(this,event)">
-                        <span style="cursor: default;">
-                            <input type="checkbox" name="ticket_ids[]" value="{{ $t->id }}" {{ $t->used ? 'disabled' : '' }} onclick="event.stopPropagation();" style="width:18px;height:18px;position:relative;z-index:2;accent-color:#f59e0b;vertical-align:middle;">
-                            <span style="margin-left:8px;">Ticket code: {{ $t->code }} - Used: {{ $t->used ? 'yes' : 'no' }}</span>
-                        </span>
-                        - <a href="{{ $t->signed_download }}" onclick="event.stopPropagation();">Download QR</a>
-                    </li>
-                @endforeach
-            </ul>
+        <!-- Tickets Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 style="margin: 0;">Your Tickets</h2>
+            </div>
+            <div class="card-body">
+                @if($tickets->isEmpty())
+                    <div class="alert alert-info">No tickets found for this order.</div>
+                @else
+                    <div class="grid grid-2" style="gap: 16px;">
+                        @foreach($tickets as $t)
+                            <div class="card p-3" style="border: 2px solid rgba(100, 200, 255, 0.2); position: relative;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                    <div>
+                                        <h4 style="margin: 0 0 8px 0; color: white;">Ticket {{ $loop->iteration }}</h4>
+                                        <p style="margin: 0; font-size: 0.9rem;">Code: <span style="font-weight: 600; color: #64C8FF;">{{ $t->code }}</span></p>
+                                    </div>
+                                    @if($t->used)
+                                        <span class="badge badge-success">Used</span>
+                                    @else
+                                        <span class="badge badge-secondary">Unused</span>
+                                    @endif
+                                </div>
+                                
+                                <div style="background: rgba(100, 200, 255, 0.1); padding: 16px; border-radius: 8px; text-align: center; margin: 12px 0;">
+                                    <a href="{{ $t->signed_download }}" class="btn btn-secondary" style="display: inline-block;">
+                                        📥 Download QR Code
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Refund Request Section -->
+        @if(!$tickets->isEmpty())
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 style="margin: 0;">Request Refund</h2>
+                </div>
+                <form method="POST" action="{{ route('customer.orders.request_refund', ['order' => $order->id]) }}" class="card-body">
+                    @csrf
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                        Select the tickets you'd like to refund. Tickets marked as "Used" cannot be refunded.
+                    </p>
+                    
+                    <div class="mb-3" style="margin-bottom: 20px;">
+                        <label style="display: block; color: var(--text-secondary); font-weight: 600; margin-bottom: 12px;">Select Tickets</label>
+                        <div class="grid grid-2" style="gap: 12px;">
+                            @foreach($tickets as $t)
+                                <label style="display: flex; align-items: center; padding: 12px; background: rgba(100, 200, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); cursor: {{ $t->used ? 'not-allowed; opacity: 0.5;' : 'pointer;' }} transition: all 0.2s;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="ticket_ids[]" 
+                                        value="{{ $t->id }}" 
+                                        {{ $t->used ? 'disabled' : '' }} 
+                                        style="width: 18px; height: 18px; cursor: pointer; margin-right: 12px; accent-color: #FF6B9D;">
+                                    <span style="flex: 1;">
+                                        <span style="color: white; font-weight: 600;">Ticket {{ $loop->iteration }}</span>
+                                        <span style="display: block; font-size: 0.85rem; color: var(--text-muted);">{{ $t->code }}</span>
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" style="margin-bottom: 20px;">
+                        <label style="display: block; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">Refund Reason</label>
+                        <textarea name="reason" placeholder="Please explain why you're requesting a refund..." style="width: 100%; min-height: 100px;"></textarea>
+                    </div>
+                    
+                    <div id="refund-debug" style="padding: 12px; background: rgba(0, 255, 136, 0.1); border-radius: 8px; margin-bottom: 20px; color: #00FF88; font-weight: 600; display: none;"></div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Refund Request</button>
+                </form>
+            </div>
         @endif
 
-        <h3>Request Refund</h3>
-        <p>Pilih tiket yang akan direfund (yang sudah digunakan tidak bisa direfund).</p>
-        <label>Reason</label>
-        <textarea name="reason"></textarea>
-        <div><button type="submit">Request Refund</button></div>
-        <div id="refund-debug" style="margin-top:8px;color:#9ae6b4;font-weight:600"></div>
-    </form>
-
-        <h3>Refund History</h3>
+        <!-- Refund History -->
         @if(isset($order->refunds) && $order->refunds->isNotEmpty())
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tickets</th>
-                        <th>Amount</th>
-                        <th>Requested By</th>
-                        <th>Status</th>
-                        <th>Processed At</th>
-                        <th>Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($order->refunds as $rf)
-                        <tr>
-                            <td>{{ $rf->id }}</td>
-                            <td>{{ is_array($rf->ticket_ids) ? implode(',', $rf->ticket_ids) : $rf->ticket_ids }}</td>
-                            <td>{{ $rf->amount }}</td>
-                            <td>{{ $rf->requester->name ?? $rf->requested_by }}</td>
-                            <td>{{ $rf->status }}</td>
-                            <td>{{ $rf->processed_at ? $rf->processed_at->toDateTimeString() : '-' }}</td>
-                            <td>{{ $rf->reason }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div class="card">
+                <div class="card-header">
+                    <h2 style="margin: 0;">Refund History</h2>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tickets</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Requested At</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($order->refunds as $rf)
+                                <tr>
+                                    <td><strong>#{{ $rf->id }}</strong></td>
+                                    <td>{{ is_array($rf->ticket_ids) ? implode(', ', $rf->ticket_ids) : $rf->ticket_ids }}</td>
+                                    <td style="color: #00FF88; font-weight: 600;">Rp {{ number_format($rf->amount) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ 
+                                            $rf->status == 'approved' ? 'success' : 
+                                            ($rf->status == 'pending' ? 'warning' : 'danger') 
+                                        }}">
+                                            {{ ucfirst($rf->status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ optional($rf->created_at)->format('M d, Y H:i') ?? '-' }}</td>
+                                    <td>{{ $rf->reason }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @else
-            <p>No refund requests for this order.</p>
+            @if(!$tickets->isEmpty())
+                <p style="text-align: center; color: var(--text-muted);">No refund requests for this order yet.</p>
+            @endif
         @endif
+    </div>
 
     <script>
         function updateRefundDebug(){
-            const inputs = Array.from(document.querySelectorAll('input[name="ticket_ids[]"]'));
+            const inputs = Array.from(document.querySelectorAll('input[name="ticket_ids[]"]:not(:disabled)'));
             const selected = inputs.filter(i=>i.checked).map(i=>i.value);
-            document.getElementById('refund-debug').textContent = 'Selected tickets: ' + selected.length + (selected.length ? ' (IDs: ' + selected.join(', ') + ')' : '');
+            const debug = document.getElementById('refund-debug');
+            if(selected.length > 0) {
+                debug.textContent = '✓ Selected ' + selected.length + ' ticket(s) for refund';
+                debug.style.display = 'block';
+            } else {
+                debug.style.display = 'none';
+            }
         }
         document.querySelectorAll('input[name="ticket_ids[]"]').forEach(i=>{
             i.addEventListener('change', updateRefundDebug);
         });
-        // init
         updateRefundDebug();
     </script>
-
 @endsection

@@ -1,23 +1,42 @@
 @extends('layouts.panel')
 
 @section('content')
-    <section class="hero">
-        <div class="hero-copy">
-            <span class="hero-tag">ONLINE TICKET</span>
-            <h1>Neon Horizon Live</h1>
-            <p>Experience the pulse of the band with premium web ticketing, exclusive concerts, and live events delivered directly through your browser.</p>
-            <div class="hero-actions">
-                <a class="button" href="{{ route('customer.events') }}">Browse Events</a>
-                <a class="button secondary" href="{{ route('dev.impersonate') }}">Start as Guest</a>
+    <section class="hero-3d">
+        <!-- 3D Canvas Background -->
+        <canvas id="canvas3d"></canvas>
+        
+        <!-- Particle Effects Layer -->
+        <div id="particles-container" class="particles-layer"></div>
+        
+        <!-- Hero Content Overlay -->
+        <div class="hero-overlay">
+            <div class="hero-content">
+                <div class="hero-copy">
+                    <span class="hero-tag">NEON HORIZON LIVE</span>
+                    <h1 class="hero-title">Experience the Next Level</h1>
+                    <p class="hero-description">Premium live ticketing with immersive 3D experience. Book your unforgettable moments now.</p>
+                    <div class="hero-actions">
+                        <a class="button primary" href="{{ route('customer.events') }}">Get Tickets</a>
+                        <a class="button secondary" href="{{ route('dev.impersonate') }}">Explore As Guest</a>
+                    </div>
+                </div>
+                
+                <div class="hero-card-3d">
+                    <div class="card-inner">
+                        <span class="card-badge">NEXT SHOW</span>
+                        <h2>Live in Jakarta</h2>
+                        <p class="card-date">23 April 2025 • 20:00</p>
+                        <p class="card-price">From Rp 500K</p>
+                        <a class="button small" href="{{ route('customer.events') }}">Book Now</a>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="hero-image">
-            <div class="hero-card">
-                <span class="card-label">Upcoming Show</span>
-                <h2>Live in Jakarta</h2>
-                <p>23 April 2025 • 20:00</p>
-                <a class="button small" href="{{ route('customer.events') }}">Book Now</a>
-            </div>
+        
+        <!-- Follow & Subscribe Buttons -->
+        <div class="hero-footer">
+            <button class="social-btn follow-btn" id="follow-btn">FOLLOW</button>
+            <button class="social-btn subscribe-btn" id="subscribe-btn">SUBSCRIBE</button>
         </div>
     </section>
 

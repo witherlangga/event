@@ -40,15 +40,23 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'location_lat' => 'float',
+        'location_lng' => 'float',
+        'is_active' => 'boolean',
+    ];
+
+    public function setPasswordAttribute($value): void
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'location_lat' => 'float',
-            'location_lng' => 'float',
-            'is_active' => 'boolean',
-        ];
+        if (! password_get_info((string) $value)['algo']) {
+            $this->attributes['password'] = \Illuminate\Support\Facades\Hash::make($value);
+        } else {
+            $this->attributes['password'] = $value;
+        }
     }
 
     public function isSystemAdmin(): bool

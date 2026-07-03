@@ -424,12 +424,16 @@
             color: #ffb3c1;
         }
     </style>
+    <!-- UI System Styles -->
+    <link rel="stylesheet" href="{{ asset('css/ui-system.css') }}">
+    <!-- Hero 3D Styles -->
+    <link rel="stylesheet" href="{{ asset('css/hero-3d.css') }}">
 </head>
 <body>
     <header class="site-header">
         <div class="topbar">
             <div class="brand-left">
-                <a href="{{ route('dev.impersonate') }}" class="signup-vertical">Sign Up &amp; Join</a>
+                <a href="{{ route('register') }}" class="signup-vertical">Sign Up &amp; Join</a>
             </div>
 
             <div class="brand-center">
@@ -442,6 +446,17 @@
                     <li><a href="{{ route('customer.events') }}">Schedule</a></li>
                     <li><a href="#">Store</a></li>
                     <li><a href="#">Links</a></li>
+                    @guest
+                        <li><a href="{{ route('login') }}">Login</a></li>
+                        <li><a href="{{ route('register') }}">Register</a></li>
+                    @else
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
+                                @csrf
+                                <button type="submit" class="button secondary" style="padding:0.75rem 1rem; font-size:0.95rem;">Logout</button>
+                            </form>
+                        </li>
+                    @endguest
                 </ul>
             </nav>
         </div>
@@ -452,5 +467,7 @@
         @if(session('error')) <div class="alert-error">{{ session('error') }}</div> @endif
         @yield('content')
     </main>
+    <!-- Hero 3D Scripts -->
+    <script src="{{ asset('js/hero-3d.js') }}"></script>
 </body>
 </html>
