@@ -147,6 +147,10 @@ class _HomeTabState extends State<_HomeTab> {
   @override
   Widget build(BuildContext context) {
     final bandName = _bandProfile?['name']?.toString() ?? AppConstants.bandName;
+    final bio = _bandProfile?['bio']?.toString() ?? 'Aplikasi resmi band untuk konser, musik, dan komunitas fans.';
+    final nextTitle = _bandProfile?['next_show_title']?.toString() ?? 'Live in Jakarta';
+    final nextDate = _bandProfile?['next_show_date']?.toString() ?? '23 April 2025 • 20:00';
+    final nextPrice = _bandProfile?['next_show_price_text']?.toString() ?? 'Mulai Rp 500K';
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -154,7 +158,7 @@ class _HomeTabState extends State<_HomeTab> {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppTheme.primary, AppTheme.surface],
@@ -165,30 +169,139 @@ class _HomeTabState extends State<_HomeTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(bandName, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 4),
-                Text(AppConstants.tagline, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.gold)),
-                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppTheme.accent.withValues(alpha: 0.18),
+                      child: const Icon(Icons.music_note, color: AppTheme.accent),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(bandName, style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 2),
+                          Text(AppConstants.tagline, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.gold)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Text(
-                  _bandProfile?['bio']?.toString() ?? 'Aplikasi resmi band untuk konser, musik, dan komunitas fans.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  'Sound Beyond the Horizon',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 24, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(bio, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EventListScreen(embedded: true))),
+                      icon: const Icon(Icons.confirmation_num_outlined),
+                      label: const Text('Dapatkan Tiket'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
+                      icon: const Icon(Icons.newspaper_outlined),
+                      label: const Text('Baca Berita'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Next Show', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.accent)),
+                            const SizedBox(height: 6),
+                            Text(nextTitle, style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 4),
+                            Text(nextDate, style: Theme.of(context).textTheme.bodySmall),
+                            const SizedBox(height: 4),
+                            Text(nextPrice, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.gold)),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
+                        child: const Text('Book Now'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Berita Terbaru', style: Theme.of(context).textTheme.titleMedium),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Berita Terbaru', style: Theme.of(context).textTheme.titleMedium),
+                TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())), child: const Text('Lihat semua')),
+              ],
+            ),
           ),
           if (_news.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('Belum ada berita.'))
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Belum ada berita.'))))
           else
-            ..._news.map((n) => ListTile(
-                  leading: const Icon(Icons.newspaper),
-                  title: Text(n['title']?.toString() ?? 'Berita'),
-                  subtitle: Text(n['excerpt']?.toString() ?? ''),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
-                )),
+            SizedBox(
+              height: 190,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: _news.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final n = _news[index];
+                  return SizedBox(
+                    width: 260,
+                    child: Card(
+                      elevation: 0,
+                      color: AppTheme.card,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(color: AppTheme.accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(999)),
+                                child: Text('News', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.accent)),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(n['title']?.toString() ?? 'Berita', maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: 8),
+                              Text(n['excerpt']?.toString() ?? '', maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text('Konser Mendatang', style: Theme.of(context).textTheme.titleMedium),

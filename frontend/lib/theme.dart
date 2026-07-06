@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF1A1A2E);
+  static const Color primary = Color(0xFF0A0E27);
   static const Color surface = Color(0xFF16213E);
-  static const Color accent = Color(0xFFE94560);
+  static const Color accent = Color(0xFF64C8FF);
+  static const Color secondary = Color(0xFFFF6B9D);
   static const Color gold = Color(0xFFF5A623);
-  static const Color background = Color(0xFF0F0F1A);
-  static const Color card = Color(0xFF1E1E32);
+  static const Color background = Color(0xFF060816);
+  static const Color card = Color(0xFF111A37);
   static const Color textPrimary = Color(0xFFF5F5F5);
   static const Color textSecondary = Color(0xFFB0B0C0);
 
@@ -35,6 +36,13 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0.5,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: primary,
+        indicatorColor: accent.withValues(alpha: 0.16),
+        labelTextStyle: WidgetStateProperty.all(
+          const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
       drawerTheme: const DrawerThemeData(backgroundColor: primary),
