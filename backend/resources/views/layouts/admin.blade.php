@@ -13,6 +13,9 @@
                 <a href="{{ route('admin.settings.band_profile') }}" class="admin-nav-link {{ request()->routeIs('admin.settings.band_profile') ? 'active' : '' }}">
                     Social Links
                 </a>
+                <a href="{{ route('admin.settings.music') }}" class="admin-nav-link {{ request()->routeIs('admin.settings.music*') ? 'active' : '' }}">
+                    Daftar Music
+                </a>
                 <a href="{{ route('admin.settings.moments') }}" class="admin-nav-link {{ request()->routeIs('admin.settings.moments') ? 'active' : '' }}">
                     Moments
                 </a>

@@ -37,6 +37,12 @@ class BandProfileController extends Controller
             'instagram' => 'nullable|url|max:1024',
             'youtube' => 'nullable|url|max:1024',
             'tiktok' => 'nullable|url|max:1024',
+            'next_show_title' => 'nullable|string|max:255',
+            'next_show_date' => 'nullable|string|max:255',
+            'next_show_price_text' => 'nullable|string|max:255',
+            'next_show_location_name' => 'nullable|string|max:255',
+            'next_show_location_address' => 'nullable|string|max:1000',
+            'next_show_map_link' => 'nullable|url|max:1024',
         ]);
 
         $profile = BandProfile::firstOrCreate(['name' => 'Neon Horizon']);
@@ -45,6 +51,12 @@ class BandProfileController extends Controller
             'youtube' => $data['youtube'] ?? null,
             'tiktok' => $data['tiktok'] ?? null,
         ]);
+        $profile->next_show_title = $data['next_show_title'] ?? null;
+        $profile->next_show_date = $data['next_show_date'] ?? null;
+        $profile->next_show_price_text = $data['next_show_price_text'] ?? null;
+        $profile->next_show_location_name = $data['next_show_location_name'] ?? null;
+        $profile->next_show_location_address = $data['next_show_location_address'] ?? null;
+        $profile->next_show_map_link = $data['next_show_map_link'] ?? null;
         $profile->save();
 
         return redirect()->route('admin.settings.band_profile')->with('success', 'Social links updated successfully.');

@@ -99,7 +99,35 @@ class CustomerPanelController extends Controller
             return redirect()->route('customer.orders')->with('error','Unauthorized');
         }
 
-        return view('customer.mockpay.show', compact('order'));
+        if ($order->status !== 'pending') {
+            return redirect()->route('customer.orders.show', ['order' => $order->id])->with('error', 'Order already processed');
+        }
+
+        $ticketCount = $order->ticket_count;
+
+        $paymentMethods = [
+            'card' => 'Credit / Debit Card',
+            'e_wallet' => 'E-Wallet',
+            'bank_transfer' => 'Bank Transfer',
+            'qris' => 'QRIS Scan',
+        ];
+
+        $ewalletProviders = [
+            'OVO' => 'OVO',
+            'DANA' => 'DANA',
+            'SHOPEEPAY' => 'ShopeePay',
+        ];
+
+        $banks = [
+            'BCA' => 'BCA',
+            'MANDIRI' => 'Mandiri',
+            'BRI' => 'BRI',
+            'BNI' => 'BNI',
+        ];
+
+        $qris = $this->generateQrisForOrder($order);
+
+        return view('customer.mockpay.show', compact('order', 'ticketCount', 'paymentMethods', 'ewalletProviders', 'banks', 'qris'));
     }
 
     // Complete mock payment: mark order paid and generate tickets & QR
@@ -115,11 +143,50 @@ class CustomerPanelController extends Controller
             return redirect()->route('customer.orders.show', ['order' => $order->id])->with('error','Order already processed');
         }
 
-        DB::transaction(function () use ($order, $user) {
+        $data = $request->validate([
+            'payment_method' => 'required|in:card,e_wallet,bank_transfer,qris',
+            'payment_channel' => 'nullable|string',
+        ]);
+
+        $paymentMethod = $data['payment_method'];
+        $paymentChannel = $data['payment_channel'] ?? null;
+        $paymentReference = null;
+        $paymentInstructions = null;
+
+        if ($paymentMethod === 'bank_transfer') {
+            $paymentChannel = $request->validate(['payment_channel' => 'required|in:BCA,MANDIRI,BRI,BNI'])['payment_channel'];
+            $bankData = $this->getBankAccountForBank($paymentChannel);
+            $paymentReference = $bankData['account'];
+            $paymentInstructions = $bankData['instructions'];
+        } elseif ($paymentMethod === 'e_wallet') {
+            $paymentChannel = $request->validate(['payment_channel' => 'required|in:OVO,DANA,SHOPEEPAY'])['payment_channel'];
+            $ewalletData = $this->getEwalletDestinationForProvider($paymentChannel);
+            $paymentReference = $ewalletData['account'];
+            $paymentInstructions = $ewalletData['instructions'];
+        } elseif ($paymentMethod === 'qris') {
+            $paymentChannel = 'QRIS';
+            $qrisData = $this->generateQrisData($order->total_price);
+            $paymentReference = $qrisData;
+            $paymentInstructions = 'Scan the QRIS code with a QRIS-enabled app to complete the demo payment.';
+        } else {
+            $paymentChannel = 'VISA/MC';
+            $paymentReference = 'CARD-4242';
+            $paymentInstructions = 'Simulated card payment. No actual charge will occur.';
+        }
+
+        DB::transaction(function () use ($order, $paymentMethod, $paymentChannel, $paymentReference, $paymentInstructions) {
+            $order->update([
+                'payment_method' => $paymentMethod,
+                'payment_channel' => $paymentChannel,
+                'payment_reference' => $paymentReference,
+                'payment_instructions' => $paymentInstructions,
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+
             $writer = new PngWriter();
             foreach ($order->items as $item) {
                 $tt = TicketType::where('id', $item->ticket_type_id)->lockForUpdate()->first();
-                // increment sold by quantity
                 $qty = $item->quantity;
                 if (! is_null($tt->quota)) {
                     $available = $tt->quota - $tt->sold;
@@ -150,12 +217,80 @@ class CustomerPanelController extends Controller
                     $ticket->save();
                 }
             }
-
-            $order->status = 'paid';
-            $order->save();
         });
 
         return redirect()->route('customer.orders.show', ['order' => $order->id])->with('success','Payment simulated and tickets generated');
+    }
+
+    private function generateQrisForOrder(Order $order): array
+    {
+        $qrisData = $this->generateQrisData($order->total_price);
+        $writer = new PngWriter();
+        $qr = new QrCode($qrisData);
+        $result = $writer->write($qr);
+
+        return [
+            'qris_data' => $qrisData,
+            'qris_image' => 'data:image/png;base64,' . base64_encode($result->getString()),
+        ];
+    }
+
+    private function getBankAccountForBank(string $bank): array
+    {
+        $accounts = [
+            'BCA' => [
+                'account' => '7001234567',
+                'instructions' => 'Transfer ke BCA 7001234567 a.n Neon Horizon. Masukkan nominal sesuai total pesanan.',
+            ],
+            'MANDIRI' => [
+                'account' => '1122334455',
+                'instructions' => 'Transfer ke Mandiri 1122334455 a.n Neon Horizon. Masukkan nominal sesuai total pesanan.',
+            ],
+            'BRI' => [
+                'account' => '0023345566',
+                'instructions' => 'Transfer ke BRI 0023345566 a.n Neon Horizon. Masukkan nominal sesuai total pesanan.',
+            ],
+            'BNI' => [
+                'account' => '6509871234',
+                'instructions' => 'Transfer ke BNI 6509871234 a.n Neon Horizon. Masukkan nominal sesuai total pesanan.',
+            ],
+        ];
+
+        return $accounts[$bank] ?? [
+            'account' => '0000000000',
+            'instructions' => 'Pilih bank untuk melihat instruksi transfer.',
+        ];
+    }
+
+    private function getEwalletDestinationForProvider(string $provider): array
+    {
+        $destinations = [
+            'OVO' => [
+                'account' => '081234567890',
+                'instructions' => 'Buka aplikasi OVO, pilih Transfer ke OVO ID 081234567890, lalu bayar sesuai total pesanan.',
+            ],
+            'DANA' => [
+                'account' => '081234567891',
+                'instructions' => 'Buka aplikasi DANA, pilih Kirim ke nomor 081234567891, lalu bayar sesuai total pesanan.',
+            ],
+            'SHOPEEPAY' => [
+                'account' => '081234567892',
+                'instructions' => 'Buka aplikasi ShopeePay, pilih Transfer ke nomor 081234567892, lalu bayar sesuai total pesanan.',
+            ],
+        ];
+
+        return $destinations[$provider] ?? [
+            'account' => '081234567899',
+            'instructions' => 'Pilih e-wallet untuk melihat instruksi pembayaran.',
+        ];
+    }
+
+    private function generateQrisData($amount)
+    {
+        $amountCents = (int)($amount * 100);
+        return '00020126360007ID.CO.MANDIRI01189370010300006154970208NMMID10254285957769'
+            . '5204' . str_pad($amountCents, 4, '0', STR_PAD_LEFT)
+            . '5303360' . '0';
     }
 
     public function orders()

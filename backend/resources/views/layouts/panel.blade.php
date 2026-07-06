@@ -690,6 +690,7 @@
                     <li><a href="#" class="nav-link">Store</a></li>
                     @auth
                         <li><a href="{{ route('customer.orders') }}" class="nav-link">Ticket Review</a></li>
+                        <li><a href="{{ route('profile') }}" class="nav-link">Profile</a></li>
                         @if (auth()->user()->isSystemAdmin())
                             <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Panel Admin</a></li>
                         @endif

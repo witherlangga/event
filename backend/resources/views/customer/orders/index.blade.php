@@ -27,10 +27,7 @@
                             <td>{{ optional($o->created_at)->format('M d, Y H:i') ?? '-' }}</td>
                             <td style="font-weight: 600; color: #00FF88;">Rp {{ number_format($o->total_price) }}</td>
                             <td>
-                                <span class="badge badge-{{ 
-                                    $o->status == 'completed' ? 'success' : 
-                                    ($o->status == 'pending' ? 'warning' : 'danger') 
-                                }}">
+                                <span class="badge badge-{{ in_array($o->status, ['completed', 'paid']) ? 'success' : ($o->status == 'pending' ? 'warning' : 'danger') }}">
                                     {{ ucfirst($o->status) }}
                                 </span>
                             </td>

@@ -25,17 +25,21 @@
                     <p class="hero-description">Neon Horizon is an alternative rock band established in 2018, dedicated to delivering powerful live performances and authentic music experiences for our community of listeners and concert-goers.</p>
                     <div class="hero-actions">
                         <a class="button primary" href="{{ route('tickets') }}">Get Tickets</a>
-                        <a class="button secondary" href="{{ $socialLinks['spotify'] ?? $socialLinks['youtube'] ?? 'https://youtube.com/@neonhorizon' }}" target="_blank" rel="noopener noreferrer">Listen Now</a>
+                        <a class="button secondary" href="{{ route('music') }}">Listen Now</a>
                     </div>
                 </div>
                 
                 <div class="hero-card-3d">
                     <div class="card-inner">
                         <span class="card-badge">NEXT SHOW</span>
-                        <h2>Live in Jakarta</h2>
-                        <p class="card-date">23 April 2025 • 20:00</p>
-                        <p class="card-price">From Rp 500K</p>
-                        <a class="button small" href="{{ route('tickets') }}">Book Now</a>
+                        <h2>{{ optional($profile)->next_show_title ?? 'Live in Jakarta' }}</h2>
+                        <p class="card-date">{{ optional($profile)->next_show_date ?? '23 April 2025 • 20:00' }}</p>
+                        <p class="card-price">{{ optional($profile)->next_show_price_text ?? 'From Rp 500K' }}</p>
+                        @if(!empty(optional($profile)->next_show_map_link))
+                            <a class="button small" href="{{ $profile->next_show_map_link }}" target="_blank" rel="noopener noreferrer">Open Map</a>
+                        @else
+                            <a class="button small" href="{{ route('tickets') }}">Book Now</a>
+                        @endif
                     </div>
                 </div>
             </div>

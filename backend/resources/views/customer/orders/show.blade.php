@@ -9,7 +9,7 @@
                     <h2 style="margin: 0;">E-Ticket Details</h2>
                     <p style="margin: 8px 0 0 0; color: var(--text-muted);">Review your order, download each QR code, and lihat ulang ticket kapan saja.</p>
                 </div>
-                <span class="badge badge-{{ $order->status == 'completed' ? 'success' : ($order->status == 'pending' ? 'warning' : 'danger') }}" style="white-space: nowrap;">
+                <span class="badge badge-{{ in_array($order->status, ['completed', 'paid']) ? 'success' : ($order->status == 'pending' ? 'warning' : 'danger') }}" style="white-space: nowrap;">
                     {{ ucfirst($order->status) }}
                 </span>
             </div>
@@ -25,7 +25,7 @@
                     </div>
                     <div>
                         <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Tickets Count</p>
-                        <p style="margin: 8px 0 0 0; color: white; font-weight: 600;">{{ $order->items->sum('quantity') ?? 0 }} Ticket(s)</p>
+                        <p style="margin: 8px 0 0 0; color: white; font-weight: 600;">{{ $order->ticket_count }} Ticket(s)</p>
                     </div>
                 </div>
                 <a href="{{ route('customer.orders') }}" class="btn btn-secondary" style="margin-top: 20px; display: inline-block;">Review Ticket History</a>

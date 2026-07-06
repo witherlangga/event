@@ -9,7 +9,19 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'event_id', 'total_price', 'status', 'payment_qr_data', 'payment_deadline', 'paid_at'];
+    protected $fillable = [
+        'user_id',
+        'event_id',
+        'total_price',
+        'status',
+        'payment_method',
+        'payment_channel',
+        'payment_reference',
+        'payment_instructions',
+        'payment_qr_data',
+        'payment_deadline',
+        'paid_at',
+    ];
 
     protected $casts = [
         'paid_at' => 'datetime',
@@ -19,6 +31,15 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function getTicketCountAttribute()
+    {
+        if ($this->relationLoaded('items')) {
+            return $this->items->sum('quantity');
+        }
+
+        return $this->items()->sum('quantity');
     }
 
     public function user()

@@ -3,11 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\CustomerPanelController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\MusicController;
+use App\Http\Controllers\Web\ProfileController;
+use App\Http\Controllers\Web\Admin\MusicController as AdminMusicController;
 use App\Models\BandProfile;
 use App\Models\User;
 
 Route::get('/', function () {
-    $profile = BandProfile::first();
+    $profile = BandProfile::firstOrCreate(['name' => 'Neon Horizon']);
     $socialLinks = $profile->social_links ?? [];
     $socialLinks = array_merge([
         'instagram' => 'https://instagram.com/neonhorizon',
@@ -19,6 +22,12 @@ Route::get('/', function () {
     return view('local_web', compact('socialLinks', 'profile'));
 })->name('home');
 Route::get('tickets', [CustomerPanelController::class, 'tickets'])->name('tickets');
+Route::get('music', [MusicController::class, 'index'])->name('music');
+
+// Music API endpoints untuk support mobile & frontend
+Route::get('api/music', [MusicController::class, 'getSongs'])->name('api.music.list');
+Route::get('api/music/{song}', [MusicController::class, 'getSong'])->name('api.music.show');
+
 // Authentication routes
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.submit');
@@ -46,6 +55,12 @@ Route::post('dev/logout-impersonate', function () {
 
     return redirect()->route('dev.impersonate');
 })->name('dev.logout-impersonate');
+
+Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth'])->group(function () {
+    Route::get('profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+});
 
 Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Middleware\RoleMiddleware::class.':customer'])->group(function () {
     Route::get('customer/events', [CustomerPanelController::class, 'index'])->name('customer.events');
@@ -82,6 +97,10 @@ Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Mi
     Route::post('admin/settings/band-profile', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'update'])->name('admin.settings.band_profile.update');
     Route::get('admin/settings/moments', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'editMoments'])->name('admin.settings.moments');
     Route::post('admin/settings/moments', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'updateMoments'])->name('admin.settings.moments.update');
+    Route::get('admin/settings/music', [AdminMusicController::class, 'index'])->name('admin.settings.music');
+    Route::post('admin/settings/music', [AdminMusicController::class, 'store'])->name('admin.settings.music.store');
+    Route::post('admin/settings/music/{song}/delete', [AdminMusicController::class, 'destroy'])->name('admin.settings.music.delete');
+    Route::post('admin/settings/music/{song}/toggle', [AdminMusicController::class, 'toggleActive'])->name('admin.settings.music.toggle');
 });
 
 Route::get('dev/token', function () {
