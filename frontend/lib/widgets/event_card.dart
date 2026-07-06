@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/event_detail_screen.dart';
+import '../utils/media_url.dart';
 
 class EventCard extends StatelessWidget {
   final Map<String, dynamic> event;
@@ -12,6 +13,8 @@ class EventCard extends StatelessWidget {
     final title = event['title'] ?? event['name'] ?? 'Konser';
     final subtitle = event['short_description'] ?? event['location_name'] ?? '';
     final cover = event['cover_path'];
+    final coverUrl = MediaUrl.resolve(cover?.toString());
+    final startsAt = event['starts_at']?.toString() ?? event['date']?.toString() ?? '';
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EventDetailScreen(eventId: id))),
@@ -24,14 +27,14 @@ class EventCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (cover != null && cover.toString().isNotEmpty)
+              if (coverUrl != null && coverUrl.isNotEmpty)
                 Hero(
                   tag: 'event-cover-$id',
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                     child: Stack(
                       children: [
-                        Image.network(cover.toString(), width: double.infinity, height: 180, fit: BoxFit.cover),
+                        Image.network(coverUrl, width: double.infinity, height: 180, fit: BoxFit.cover),
                         Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -43,15 +46,20 @@ class EventCard extends StatelessWidget {
                           left: 12,
                           bottom: 12,
                           right: 12,
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: Text(title.toString(), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
-                              if (distanceKm != null)
+                              Text(title.toString(), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text(startsAt, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                              if (distanceKm != null) ...[
+                                const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                   decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary, borderRadius: BorderRadius.circular(8)),
                                   child: Text('${distanceKm!.toStringAsFixed(1)} km', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                                 ),
+                              ],
                             ],
                           ),
                         ),

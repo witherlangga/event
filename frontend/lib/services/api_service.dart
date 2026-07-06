@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -16,7 +17,11 @@ class ApiService {
       return '$scheme://$host:8000/api';
     }
 
-    return 'http://localhost:8000/api';
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000/api';
+    }
+
+    return 'http://127.0.0.1:8000/api';
   }
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();

@@ -7,7 +7,7 @@
         @if($orders->isEmpty())
             <div class="card text-center p-4">
                 <p class="text-muted">No orders yet. Start booking your favorite events!</p>
-                <a href="{{ route('customer.events.index') }}" class="btn btn-primary mt-3" style="display: inline-block;">Browse Events</a>
+                <a href="{{ route('tickets') }}" class="btn btn-primary mt-3" style="display: inline-block;">Browse Events</a>
             </div>
         @else
             <table>

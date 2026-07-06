@@ -16,10 +16,11 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            if (Auth::user()->isSystemAdmin()) {
-                return redirect()->route('admin.users');
+            $user = Auth::user();
+            if ($user instanceof User && $user->isSystemAdmin()) {
+                return redirect()->route('admin.events');
             }
-            return redirect()->route('customer.events');
+            return redirect()->route('home');
         }
 
         return view('login');
@@ -45,11 +46,12 @@ class AuthController extends Controller
         if (Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']], $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            if (Auth::user()->isSystemAdmin()) {
-                return redirect()->intended(route('admin.users'));
+            $user = Auth::user();
+            if ($user instanceof User && $user->isSystemAdmin()) {
+                return redirect()->intended(route('admin.events'));
             }
 
-            return redirect()->intended(route('customer.events'));
+            return redirect()->intended(route('home'));
         }
 
         return back()->withErrors([
@@ -75,7 +77,11 @@ class AuthController extends Controller
     public function showRegister()
     {
         if (Auth::check()) {
-            return redirect()->route('customer.events');
+            $user = Auth::user();
+            if ($user instanceof User && $user->isSystemAdmin()) {
+                return redirect()->route('admin.events');
+            }
+            return redirect()->route('home');
         }
         return view('register');
     }
@@ -102,6 +108,6 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('customer.events');
+        return redirect()->route('home');
     }
 }

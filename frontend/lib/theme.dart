@@ -68,6 +68,19 @@ class AppTheme {
           borderSide: const BorderSide(color: accent, width: 1.5),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: accent,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: accent,
+          side: const BorderSide(color: Color(0xFF2A2A45)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
       cardColor: card,
       dividerColor: const Color(0xFF2A2A45),
       textTheme: const TextTheme(

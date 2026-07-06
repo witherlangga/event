@@ -22,6 +22,7 @@ class BandProfileSeeder extends Seeder
                 'social_links' => [
                     'instagram' => 'https://instagram.com/neonhorizon',
                     'youtube' => 'https://youtube.com/@neonhorizon',
+                    'tiktok' => 'https://tiktok.com/@neonhorizon',
                     'spotify' => 'https://open.spotify.com/artist/neonhorizon',
                 ],
             ]

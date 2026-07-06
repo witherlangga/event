@@ -27,14 +27,21 @@ class UserController extends Controller
             return redirect()->route('dev.impersonate')->with('error', 'Unauthorized');
         }
 
-        $v = $request->validate([
-            'role' => ['required'],
-            'is_active' => ['nullable','in:0,1'],
+        $request->validate([
+            'role' => ['sometimes', 'required', 'in:customer,system_admin'],
+            'is_active' => ['sometimes', 'in:0,1'],
         ]);
 
         $u = User::findOrFail($id);
-        $u->role = $v['role'];
-        $u->is_active = isset($v['is_active']) ? (bool) $v['is_active'] : $u->is_active;
+
+        if ($request->has('role')) {
+            $u->role = $request->input('role');
+        }
+
+        if ($request->has('is_active')) {
+            $u->is_active = (bool) $request->input('is_active');
+        }
+
         $u->save();
 
         return redirect()->route('admin.users')->with('success', 'User updated');

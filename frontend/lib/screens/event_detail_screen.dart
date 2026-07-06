@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/media_url.dart';
 import 'payment_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -214,18 +215,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           final e = snap.data!;
           final rawId = e['id'];
           final id = rawId is int ? rawId : (rawId != null ? (int.tryParse(rawId.toString()) ?? 0) : 0);
+          final coverUrl = MediaUrl.resolve(e['cover_path']?.toString());
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (e['cover_path'] != null && e['cover_path'].toString().isNotEmpty)
+                  if (coverUrl != null && coverUrl.isNotEmpty)
                     Hero(
                       tag: 'event-cover-$id',
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(e['cover_path'].toString(), width: double.infinity, height: 200, fit: BoxFit.cover),
+                        child: Image.network(coverUrl, width: double.infinity, height: 200, fit: BoxFit.cover),
                       ),
                     ),
                   const SizedBox(height: 12),

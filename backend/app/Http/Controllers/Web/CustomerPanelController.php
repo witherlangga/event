@@ -20,13 +20,22 @@ class CustomerPanelController extends Controller
 {
     public function index()
     {
-        $events = Event::where('is_active', true)->orderBy('starts_at')->get();
-        return view('customer.events.index', compact('events'));
+        return redirect()->route('tickets');
+    }
+
+    public function tickets()
+    {
+        $events = Event::where('is_active', true)
+            ->with(['ticketTypes' => fn ($query) => $query->where('is_active', true)])
+            ->orderBy('starts_at')
+            ->get();
+
+        return view('customer.tickets.index', compact('events'));
     }
 
     public function show(Event $event)
     {
-        $ticketTypes = TicketType::where('event_id', $event->id)->get();
+        $ticketTypes = TicketType::where('event_id', $event->id)->where('is_active', true)->get();
         return view('customer.events.show', compact('event','ticketTypes'));
     }
 
@@ -34,7 +43,7 @@ class CustomerPanelController extends Controller
     {
         $user = Auth::user();
         if (! $user) {
-            return redirect()->route('dev.impersonate')->with('error', 'Pilih user untuk impersonate');
+            return redirect()->route('login')->with('error', 'Please log in to purchase tickets.');
         }
 
         $data = $request->validate([

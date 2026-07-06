@@ -15,8 +15,8 @@
                         <div class="card" style="height: 100%; display: flex; flex-direction: column;">
                             @php
                                 $img = null;
-                                if (!empty($e->cover_image)) {
-                                    try { $img = \Illuminate\Support\Facades\Storage::url($e->cover_image); } catch (\Throwable $ex) { $img = null; }
+                                if (!empty($e->cover_path)) {
+                                    try { $img = \Illuminate\Support\Facades\Storage::url($e->cover_path); } catch (\Throwable $ex) { $img = null; }
                                 }
                             @endphp
                             

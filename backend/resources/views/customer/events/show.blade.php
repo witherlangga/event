@@ -4,8 +4,8 @@
     <div class="section">
         @php
             $img = null;
-            if (!empty($event->cover_image)) {
-                try { $img = \Illuminate\Support\Facades\Storage::url($event->cover_image); } catch (\Throwable $ex) { $img = null; }
+            if (!empty($event->cover_path)) {
+                try { $img = \Illuminate\Support\Facades\Storage::url($event->cover_path); } catch (\Throwable $ex) { $img = null; }
             }
         @endphp
 
@@ -19,8 +19,8 @@
             
             <div>
                 <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                    @if($event->venue)
-                        <span class="badge badge-primary">{{ $event->venue }}</span>
+                    @if($event->location_name)
+                        <span class="badge badge-primary">{{ $event->location_name }}</span>
                     @endif
                     <span class="badge badge-secondary">{{ optional($event->starts_at)->format('M d, Y H:i') ?? 'TBA' }}</span>
                 </div>

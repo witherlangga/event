@@ -9,7 +9,10 @@ class MediaUrl {
       final host = uri.host.isNotEmpty ? uri.host : 'localhost';
       return '${uri.scheme}://$host:8000/storage';
     }
-    return 'http://localhost:8000/storage';
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000/storage';
+    }
+    return 'http://127.0.0.1:8000/storage';
   }
 
   static String? resolve(String? path) {

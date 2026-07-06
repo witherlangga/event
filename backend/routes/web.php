@@ -3,16 +3,21 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\CustomerPanelController;
 use App\Http\Controllers\Web\AuthController;
-use App\Models\Event;
+use App\Models\BandProfile;
 use App\Models\User;
 
 Route::get('/', function () {
-    $events = Event::where('is_active', true)
-        ->orderBy('starts_at')
-        ->take(4)
-        ->get();
-    return view('local_web', compact('events'));
-});
+    $socialLinks = BandProfile::query()->value('social_links') ?? [];
+    $socialLinks = array_merge([
+        'instagram' => 'https://instagram.com/neonhorizon',
+        'youtube' => 'https://youtube.com/@neonhorizon',
+        'tiktok' => 'https://tiktok.com/@neonhorizon',
+        'spotify' => 'https://open.spotify.com/artist/neonhorizon',
+    ], $socialLinks);
+
+    return view('local_web', compact('socialLinks'));
+})->name('home');
+Route::get('tickets', [CustomerPanelController::class, 'tickets'])->name('tickets');
 // Authentication routes
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.submit');
@@ -31,7 +36,7 @@ Route::post('dev/impersonate', function () {
     session(['impersonate_user_id' => $userId]);
     \Illuminate\Support\Facades\Auth::loginUsingId($userId);
 
-    return redirect()->route('customer.events');
+    return redirect()->route('tickets');
 })->name('dev.impersonate.post');
 
 Route::post('dev/logout-impersonate', function () {
@@ -54,6 +59,17 @@ Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Mi
 });
 
 Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Middleware\RoleMiddleware::class.':system_admin'])->group(function () {
+    Route::get('admin', function () {
+        return redirect()->route('admin.events');
+    })->name('admin.dashboard');
+
+    Route::get('admin/events', [\App\Http\Controllers\Web\Admin\EventController::class, 'index'])->name('admin.events');
+    Route::get('admin/events/create', [\App\Http\Controllers\Web\Admin\EventController::class, 'create'])->name('admin.events.create');
+    Route::post('admin/events', [\App\Http\Controllers\Web\Admin\EventController::class, 'store'])->name('admin.events.store');
+    Route::get('admin/events/{event}/edit', [\App\Http\Controllers\Web\Admin\EventController::class, 'edit'])->name('admin.events.edit');
+    Route::put('admin/events/{event}', [\App\Http\Controllers\Web\Admin\EventController::class, 'update'])->name('admin.events.update');
+    Route::post('admin/events/{event}/delete', [\App\Http\Controllers\Web\Admin\EventController::class, 'destroy'])->name('admin.events.delete');
+
     Route::get('admin/users', [\App\Http\Controllers\Web\Admin\UserController::class, 'index'])->name('admin.users');
     Route::post('admin/users/{user}', [\App\Http\Controllers\Web\Admin\UserController::class, 'update'])->name('admin.users.update');
     Route::post('admin/users/{user}/delete', [\App\Http\Controllers\Web\Admin\UserController::class, 'delete'])->name('admin.users.delete');

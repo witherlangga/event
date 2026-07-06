@@ -247,6 +247,7 @@ class _EventListScreenState extends State<EventListScreen> {
       appBar: AppBar(
         title: const Text('Konser'),
         actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () => setState(() => _eventsFuture = _loadEvents())),
           IconButton(icon: const Icon(Icons.filter_list), onPressed: _showFilterDialog),
           IconButton(icon: const Icon(Icons.my_location), onPressed: _searchNearby),
         ],

@@ -1,100 +1,75 @@
-@extends('layouts.panel')
+@extends('layouts.admin')
 
-@section('content')
-    <div class="section">
-        <div class="section-title">User Management</div>
-
-        @if(session('success'))
-            <div class="alert alert-success">
-                <span>✓</span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        <div class="card">
-            <div class="card-body">
-                <div style="overflow-x: auto;">
-                    <table style="min-width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Joined</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($users as $u)
-                                <tr>
-                                    <td><strong>#{{ $u->id }}</strong></td>
-                                    <td>
-                                        <div style="font-weight: 600; color: white;">{{ $u->name }}</div>
-                                    </td>
-                                    <td style="color: var(--text-secondary);">{{ $u->email }}</td>
-                                    <td>
-                                        <form method="POST" action="{{ route('admin.users.update', ['user' => $u->id]) }}" style="display: inline; min-width: 150px;">
-                                            @csrf
-                                            <select name="role" style="padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: white; border-radius: 6px; font-size: 0.9rem; onchange="this.form.submit();">
-                                                <option value="customer" {{ $u->role === 'customer' ? 'selected' : '' }}>👤 Customer</option>
-                                                <option value="system_admin" {{ $u->role === 'system_admin' ? 'selected' : '' }}>👨‍💼 Admin</option>
-                                            </select>
-                                        </form>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-{{ $u->is_active ? 'success' : 'danger' }}">
-                                            {{ $u->is_active ? '🟢 Active' : '🔴 Inactive' }}
-                                        </span>
-                                    </td>
-                                    <td style="color: var(--text-muted); font-size: 0.9rem;">{{ optional($u->created_at)->format('M d, Y') ?? '-' }}</td>
-                                    <td>
-                                        <div style="display: flex; gap: 8px; align-items: center;">
-                                            <!-- Toggle Active Status -->
-                                            <form method="POST" action="{{ route('admin.users.update', ['user' => $u->id]) }}" style="display: inline;">
-                                                @csrf
-                                                <input type="hidden" name="is_active" value="{{ $u->is_active ? '0' : '1' }}">
-                                                <button 
-                                                    type="submit" 
-                                                    class="btn btn-secondary" 
-                                                    style="padding: 6px 12px; font-size: 0.85rem;">
-                                                    {{ $u->is_active ? '⏸️ Deactivate' : '▶️ Activate' }}
-                                                </button>
-                                            </form>
-
-                                            <!-- Delete Button -->
-                                            <form method="POST" action="{{ route('admin.users.delete', ['user' => $u->id]) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                                                @csrf
-                                                <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem;">
-                                                    🗑️ Delete
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" style="text-align: center; padding: 40px 20px;">
-                                        <p style="color: var(--text-muted);">No users found</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+@section('admin-content')
+    <div class="admin-page-head">
+        <div>
+            <h1>User Management</h1>
+            <p>Manage fan accounts, roles, and access status.</p>
         </div>
     </div>
 
-    <style>
-        select {
-            cursor: pointer;
-        }
-        select:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
-        }
-    </style>
+    @if(session('success'))
+        <div class="alert-success" style="margin-bottom: 1rem;">{{ session('success') }}</div>
+    @endif
+
+    <div class="admin-card">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($users as $u)
+                        <tr>
+                            <td><strong>#{{ $u->id }}</strong></td>
+                            <td>{{ $u->name }}</td>
+                            <td>{{ $u->email }}</td>
+                            <td>
+                                <form method="POST" action="{{ route('admin.users.update', ['user' => $u->id]) }}">
+                                    @csrf
+                                    <select name="role" onchange="this.form.submit()" class="admin-field" style="padding:0.55rem 0.75rem;min-width:140px;">
+                                        <option value="customer" {{ $u->role === 'customer' ? 'selected' : '' }}>Customer</option>
+                                        <option value="system_admin" {{ $u->role === 'system_admin' ? 'selected' : '' }}>Admin</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                <span class="admin-badge {{ $u->is_active ? 'admin-badge-success' : 'admin-badge-muted' }}">
+                                    {{ $u->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>{{ optional($u->created_at)->format('M d, Y') ?? '—' }}</td>
+                            <td>
+                                <div class="admin-actions">
+                                    <form method="POST" action="{{ route('admin.users.update', ['user' => $u->id]) }}">
+                                        @csrf
+                                        <input type="hidden" name="is_active" value="{{ $u->is_active ? '0' : '1' }}">
+                                        <button type="submit" class="admin-btn admin-btn-secondary">
+                                            {{ $u->is_active ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.users.delete', ['user' => $u->id]) }}" onsubmit="return confirm('Delete this user?');">
+                                        @csrf
+                                        <button type="submit" class="admin-btn admin-btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:2rem;color:#8892b0;">No users found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 @endsection

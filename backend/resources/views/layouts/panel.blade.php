@@ -36,45 +36,20 @@
             position: sticky;
             top: 0;
             z-index: 40;
-            background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.15));
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            backdrop-filter: blur(6px);
+            background: rgba(8, 10, 22, 0.72);
+            border-bottom: 1px solid rgba(100, 200, 255, 0.12);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
         }
 
         .topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
+            gap: 2rem;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0.75rem 1rem;
-        }
-
-        .brand-left {
-            width: 160px;
-            display: flex;
-            align-items: center;
-        }
-
-        .signup-vertical {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.78rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.03);
-            background: rgba(255,255,255,0.02);
-        }
-
-        .brand-center {
-            flex: 1 1 auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0.85rem 1.25rem;
         }
 
         .logo {
@@ -82,28 +57,127 @@
             font-weight: 900;
             font-size: 1.05rem;
             text-decoration: none;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.14em;
+            white-space: nowrap;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .logo:hover {
+            color: #fff;
+            text-shadow: 0 0 18px rgba(100, 200, 255, 0.45);
         }
 
         .main-nav ul {
             display: flex;
-            gap: 2rem;
+            gap: 0.35rem;
             list-style: none;
             margin: 0;
             padding: 0;
             align-items: center;
         }
 
-        .main-nav a {
+        .nav-link {
             color: var(--text-secondary);
             text-decoration: none;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            padding: 0.45rem 0.6rem;
+            font-weight: 600;
+            font-size: 0.92rem;
+            letter-spacing: 0.04em;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            transition: color 0.2s ease, background 0.2s ease;
         }
 
-        .main-nav a:hover {
-            color: var(--accent);
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-auth {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-shrink: 0;
+        }
+
+        .nav-auth form {
+            margin: 0;
+        }
+
+        .nav-auth-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            padding: 0.55rem 0.85rem;
+            border-radius: 999px;
+            transition: color 0.2s ease;
+        }
+
+        .nav-auth-link:hover {
+            color: #fff;
+        }
+
+        .nav-auth-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.25rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ff6b9d, #e94560);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.88rem;
+            letter-spacing: 0.06em;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .nav-auth-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.35);
+        }
+
+        .nav-auth-btn-outline {
+            background: transparent;
+            border: 1px solid rgba(100, 200, 255, 0.35);
+            color: #64c8ff;
+        }
+
+        .nav-auth-btn-outline:hover {
+            background: rgba(100, 200, 255, 0.08);
+            box-shadow: 0 0 20px rgba(100, 200, 255, 0.2);
+        }
+
+        @media (max-width: 720px) {
+            .topbar {
+                gap: 1rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .logo {
+                font-size: 0.92rem;
+                letter-spacing: 0.1em;
+            }
+
+            .main-nav ul {
+                gap: 0.15rem;
+            }
+
+            .nav-link {
+                padding: 0.45rem 0.65rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-auth-link {
+                display: none;
+            }
+
+            .nav-auth-btn {
+                padding: 0.55rem 1rem;
+                font-size: 0.82rem;
+            }
         }
 
         /* Banner / stacked event style */
@@ -263,6 +337,117 @@
             margin-bottom: 2rem;
         }
 
+        .section-social {
+            grid-template-columns: repeat(3, 1fr);
+            max-width: 720px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .social-logo-card {
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            padding: 2rem;
+        }
+
+        .social-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+        }
+
+        .social-logo svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .social-logo-instagram {
+            color: #E4405F;
+        }
+
+        .social-logo-youtube {
+            color: #FF0000;
+        }
+
+        .social-logo-tiktok {
+            color: #ffffff;
+        }
+
+        a.social-logo-card:hover .social-logo-instagram {
+            color: #ff6b81;
+        }
+
+        a.social-logo-card:hover .social-logo-youtube {
+            color: #ff4444;
+        }
+
+        a.social-logo-card:hover .social-logo-tiktok {
+            color: #64c8ff;
+        }
+
+        .section-moments {
+            margin-top: 2.5rem;
+        }
+
+        .moments-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .moment-frame {
+            margin: 0;
+            aspect-ratio: 1 / 1;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .moment-frame:hover {
+            transform: translateY(-3px);
+            border-color: rgba(100, 200, 255, 0.45);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 20px rgba(100, 200, 255, 0.12);
+        }
+
+        .moment-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .band-message {
+            margin: 2rem 0 0;
+            padding: 2rem 2.25rem;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+        }
+
+        .band-message p {
+            margin: 0;
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--text);
+            font-style: italic;
+        }
+
+        .band-message footer {
+            margin-top: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #64c8ff;
+            font-style: normal;
+        }
+
         .feature-card,
         .event-card,
         .action-card {
@@ -282,6 +467,71 @@
             margin: 0;
             font-size: 1.25rem;
             color: #fff;
+        }
+
+        .bgm-content-area {
+            position: relative;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-top: 2rem;
+            padding: 2.5rem max(18px, calc((100vw - min(1200px, calc(100% - 36px))) / 2 + 18px)) 3rem;
+            background-image: url("{{ asset('assets/bgmusic.jpg') }}");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+        }
+
+        .bgm-content-area::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(10, 14, 39, 0.82) 0%, rgba(10, 14, 39, 0.88) 100%);
+            z-index: 0;
+        }
+
+        .bgm-content-area > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        a.feature-link {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        a.feature-link:hover {
+            transform: translateY(-4px);
+            border-color: rgba(100, 200, 255, 0.45);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35), 0 0 24px rgba(100, 200, 255, 0.15);
+        }
+
+        @media (max-width: 900px) {
+            .moments-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 680px) {
+            .section-social {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 100%;
+            }
+
+            .social-logo-card {
+                min-height: 110px;
+                padding: 1.25rem;
+            }
+
+            .social-logo {
+                width: 56px;
+                height: 56px;
+            }
+
+            .band-message {
+                padding: 1.5rem 1.25rem;
+            }
         }
 
         .event-meta {
@@ -432,33 +682,31 @@
 <body>
     <header class="site-header">
         <div class="topbar">
-            <div class="brand-left">
-                <a href="{{ route('register') }}" class="signup-vertical">Sign Up &amp; Join</a>
-            </div>
-
-            <div class="brand-center">
-                <a href="/" class="logo">NEON HORIZON</a>
-            </div>
+            <a href="/" class="logo">NEON HORIZON</a>
 
             <nav class="main-nav">
                 <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="{{ route('customer.events') }}">Schedule</a></li>
-                    <li><a href="#">Store</a></li>
-                    <li><a href="#">Links</a></li>
-                    @guest
-                        <li><a href="{{ route('login') }}">Login</a></li>
-                        <li><a href="{{ route('register') }}">Register</a></li>
-                    @else
-                        <li>
-                            <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
-                                @csrf
-                                <button type="submit" class="button secondary" style="padding:0.75rem 1rem; font-size:0.95rem;">Logout</button>
-                            </form>
-                        </li>
-                    @endguest
+                    <li><a href="/" class="nav-link">Home</a></li>
+                    <li><a href="#" class="nav-link">Store</a></li>
+                    @auth
+                        @if (auth()->user()->isSystemAdmin())
+                            <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Panel Admin</a></li>
+                        @endif
+                    @endauth
                 </ul>
             </nav>
+
+            <div class="nav-auth">
+                @guest
+                    <a href="{{ route('login') }}" class="nav-auth-link">Log In</a>
+                    <a href="{{ route('register') }}" class="nav-auth-btn">Join</a>
+                @else
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="nav-auth-btn nav-auth-btn-outline">Logout</button>
+                    </form>
+                @endguest
+            </div>
         </div>
     </header>
 
