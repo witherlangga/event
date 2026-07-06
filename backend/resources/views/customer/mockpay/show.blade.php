@@ -31,7 +31,7 @@
                 <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 30px;">
                     <p style="margin: 0; color: #00FF88; font-weight: 600;">ℹ️ Demo Mode</p>
                     <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
-                        This is a simulated payment page for demonstration purposes. No real money will be charged. Click "Confirm Payment" to simulate a successful payment.
+                        Ini adalah halaman pembayaran simulasi untuk memudahkan pesanan Anda. Tidak ada uang sungguhan yang ditarik. Klik "Confirm Payment" untuk menyelesaikan proses dan membuat e-ticket.
                     </p>
                 </div>
 
@@ -59,7 +59,7 @@
                     <label style="display: flex; align-items: center; padding: 12px; background: rgba(100, 200, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; margin-bottom: 12px;">
                         <input type="checkbox" required style="width: 18px; height: 18px; margin-right: 12px; accent-color: #FF6B9D; cursor: pointer;">
                         <span style="color: var(--text-secondary); font-size: 0.9rem;">
-                            I agree to the payment terms and conditions
+                            Saya setuju dengan syarat dan ketentuan pembayaran
                         </span>
                     </label>
 

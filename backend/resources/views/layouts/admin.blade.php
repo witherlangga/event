@@ -10,6 +10,15 @@
                 <a href="{{ route('admin.events') }}" class="admin-nav-link {{ request()->routeIs('admin.events*') ? 'active' : '' }}">
                     Event &amp; Tickets
                 </a>
+                <a href="{{ route('admin.settings.band_profile') }}" class="admin-nav-link {{ request()->routeIs('admin.settings.band_profile') ? 'active' : '' }}">
+                    Social Links
+                </a>
+                <a href="{{ route('admin.settings.moments') }}" class="admin-nav-link {{ request()->routeIs('admin.settings.moments') ? 'active' : '' }}">
+                    Moments
+                </a>
+                <a href="{{ route('admin.reviews') }}" class="admin-nav-link {{ request()->routeIs('admin.reviews*') ? 'active' : '' }}">
+                    Order Review
+                </a>
                 <a href="{{ route('admin.users') }}" class="admin-nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
                     User Management
                 </a>

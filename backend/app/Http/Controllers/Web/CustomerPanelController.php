@@ -94,7 +94,7 @@ class CustomerPanelController extends Controller
     public function mockPaymentShow($orderId)
     {
         $user = Auth::user();
-        $order = Order::with(['items','refunds.requester','refunds.processor'])->findOrFail($orderId);
+        $order = Order::with(['items.ticketType', 'refunds.requester', 'refunds.processor', 'user', 'event'])->findOrFail($orderId);
         if ($order->user_id !== $user->id) {
             return redirect()->route('customer.orders')->with('error','Unauthorized');
         }
@@ -168,12 +168,12 @@ class CustomerPanelController extends Controller
     public function orderShow($orderId)
     {
         $user = Auth::user();
-        $order = Order::with('items')->findOrFail($orderId);
+        $order = Order::with(['items.ticketType', 'user', 'event', 'refunds'])->findOrFail($orderId);
         if ($order->user_id !== $user->id) {
             return redirect()->route('customer.orders')->with('error','Unauthorized');
         }
 
-        $tickets = Ticket::where('order_id', $order->id)->get();
+        $tickets = Ticket::with('ticketType')->where('order_id', $order->id)->get();
         foreach ($tickets as $t) {
             $t->signed_download = URL::temporarySignedRoute('tickets.qr.download', now()->addMinutes(30), ['ticket' => $t->id]);
         }

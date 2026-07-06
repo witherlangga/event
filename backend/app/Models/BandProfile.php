@@ -13,9 +13,12 @@ class BandProfile extends Model
         'genre',
         'formed_year',
         'social_links',
+        'moments',
+        'band_message',
     ];
 
     protected $casts = [
         'social_links' => 'array',
+        'moments' => 'array',
     ];
 }

@@ -7,7 +7,8 @@ use App\Models\BandProfile;
 use App\Models\User;
 
 Route::get('/', function () {
-    $socialLinks = BandProfile::query()->value('social_links') ?? [];
+    $profile = BandProfile::first();
+    $socialLinks = $profile->social_links ?? [];
     $socialLinks = array_merge([
         'instagram' => 'https://instagram.com/neonhorizon',
         'youtube' => 'https://youtube.com/@neonhorizon',
@@ -15,7 +16,7 @@ Route::get('/', function () {
         'spotify' => 'https://open.spotify.com/artist/neonhorizon',
     ], $socialLinks);
 
-    return view('local_web', compact('socialLinks'));
+    return view('local_web', compact('socialLinks', 'profile'));
 })->name('home');
 Route::get('tickets', [CustomerPanelController::class, 'tickets'])->name('tickets');
 // Authentication routes
@@ -73,6 +74,14 @@ Route::middleware([\App\Http\Middleware\Impersonate::class, 'auth', \App\Http\Mi
     Route::get('admin/users', [\App\Http\Controllers\Web\Admin\UserController::class, 'index'])->name('admin.users');
     Route::post('admin/users/{user}', [\App\Http\Controllers\Web\Admin\UserController::class, 'update'])->name('admin.users.update');
     Route::post('admin/users/{user}/delete', [\App\Http\Controllers\Web\Admin\UserController::class, 'delete'])->name('admin.users.delete');
+    Route::get('admin/reviews', [\App\Http\Controllers\Web\Admin\OrderReviewController::class, 'index'])->name('admin.reviews');
+    Route::post('admin/reviews/tickets/{ticket}/delete', [\App\Http\Controllers\Web\Admin\OrderReviewController::class, 'deleteTicket'])->name('admin.reviews.tickets.delete');
+    
+    // Band profile / social links settings
+    Route::get('admin/settings/band-profile', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'edit'])->name('admin.settings.band_profile');
+    Route::post('admin/settings/band-profile', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'update'])->name('admin.settings.band_profile.update');
+    Route::get('admin/settings/moments', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'editMoments'])->name('admin.settings.moments');
+    Route::post('admin/settings/moments', [\App\Http\Controllers\Web\Admin\BandProfileController::class, 'updateMoments'])->name('admin.settings.moments.update');
 });
 
 Route::get('dev/token', function () {

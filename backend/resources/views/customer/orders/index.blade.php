@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="section">
-        <div class="section-title">Your Order History</div>
+        <div class="section-title">Order History</div>
         
         @if($orders->isEmpty())
             <div class="card text-center p-4">
@@ -36,7 +36,7 @@
                             </td>
                             <td>
                                 <a href="{{ route('customer.orders.show', ['order' => $o->id]) }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
-                                    View Details
+                                    Review Ticket
                                 </a>
                             </td>
                         </tr>

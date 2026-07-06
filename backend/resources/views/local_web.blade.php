@@ -70,22 +70,22 @@
         </div>
 
         <div class="moments-grid">
-            <figure class="moment-frame">
-                <img src="{{ asset('assets/01.jpg') }}" alt="Neon Horizon live moment 1" loading="lazy">
-            </figure>
-            <figure class="moment-frame">
-                <img src="{{ asset('assets/02.jpeg') }}" alt="Neon Horizon live moment 2" loading="lazy">
-            </figure>
-            <figure class="moment-frame">
-                <img src="{{ asset('assets/03.jpeg') }}" alt="Neon Horizon live moment 3" loading="lazy">
-            </figure>
-            <figure class="moment-frame">
-                <img src="{{ asset('assets/04.jpg') }}" alt="Neon Horizon live moment 4" loading="lazy">
-            </figure>
+            @php
+                $moments = $profile->moments ?? [];
+                if (empty($moments)) {
+                    $moments = [asset('assets/01.jpg'), asset('assets/02.jpeg'), asset('assets/03.jpeg'), asset('assets/04.jpg')];
+                }
+            @endphp
+
+            @foreach($moments as $m)
+                <figure class="moment-frame">
+                    <img src="{{ $m }}" alt="Neon Horizon live moment" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
+                </figure>
+            @endforeach
         </div>
 
         <blockquote class="band-message">
-            <p>Terima kasih sudah menjadi bagian dari perjalanan Neon Horizon. Setiap tiket yang kalian pesan, setiap sorak di konser, dan setiap momen yang kita bagi bersama — itulah energi yang membuat kami terus bermain di atas panggung. Sampai jumpa di show berikutnya. Stay loud, stay neon.</p>
+            <p>{{ $profile->band_message ?? 'Terima kasih sudah menjadi bagian dari perjalanan Neon Horizon. Setiap tiket yang kalian pesan, setiap sorak di konser, dan setiap momen yang kita bagi bersama — itulah energi yang membuat kami terus bermain di atas panggung. Sampai jumpa di show berikutnya. Stay loud, stay neon.' }}</p>
             <footer>— Neon Horizon</footer>
         </blockquote>
     </section>
