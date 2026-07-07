@@ -4,11 +4,10 @@ import '../providers/auth_provider.dart';
 import '../constants/app_constants.dart';
 import '../theme.dart';
 import 'band_profile_screen.dart';
-import 'members_screen.dart';
 import 'order_history_screen.dart';
 import 'ticket_management_screen.dart';
-import 'admin_dashboard_screen.dart';
-import 'admin_content_screen.dart';
+import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileHubScreen extends ConsumerWidget {
   final bool embedded;
@@ -178,21 +177,6 @@ class ProfileHubScreen extends ConsumerWidget {
                 const SizedBox(height: 10),
                 _menuTile(
                   context,
-                  Icons.group_outlined,
-                  'Anggota Band',
-                  'Lihat anggota dan biodata',
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MembersScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _menuTile(
-                  context,
                   Icons.confirmation_num_outlined,
                   'Tiket Saya',
                   'Kelola tiket yang dimiliki',
@@ -240,27 +224,13 @@ class ProfileHubScreen extends ConsumerWidget {
                     'Kelola Konser',
                     'Atur konser dan tiket',
                     () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminDashboardScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _menuTile(
-                    context,
-                    Icons.dashboard_customize_outlined,
-                    'Kelola Konten',
-                    'Edit musik, galeri, dan berita',
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminContentScreen(),
-                        ),
-                      );
+                      final adminUrl = '${ApiService.instance.baseRoot}/admin';
+                      try {
+                        final uri = Uri.parse(adminUrl);
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal membuka panel admin')));
+                      }
                     },
                   ),
                 ],

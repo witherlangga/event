@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../utils/media_url.dart';
 import 'payment_screen.dart';
@@ -12,15 +14,15 @@ class EventDetailScreen extends StatefulWidget {
   State<EventDetailScreen> createState() => _EventDetailScreenState();
 }
 
-class _TicketTypesList extends StatefulWidget {
+class _TicketTypesList extends ConsumerStatefulWidget {
   final Map<String, dynamic> event;
   const _TicketTypesList({required this.event});
 
   @override
-  State<_TicketTypesList> createState() => _TicketTypesListState();
+  ConsumerState<_TicketTypesList> createState() => _TicketTypesListState();
 }
 
-class _TicketTypesListState extends State<_TicketTypesList> {
+class _TicketTypesListState extends ConsumerState<_TicketTypesList> {
   Map<int, int> qty = {};
   final Map<int, bool> _loading = {};
   final Map<int, String?> _error = {};
@@ -36,6 +38,19 @@ class _TicketTypesListState extends State<_TicketTypesList> {
       }
     }
     return result;
+  }
+
+  String? _extractErrorMessage(String body) {
+    try {
+      final data = jsonDecode(body);
+      if (data is Map<String, dynamic>) {
+        if (data['message'] is String) return data['message'] as String;
+        if (data['errors'] != null) return data['errors'].toString();
+      }
+    } catch (_) {
+      // ignore invalid JSON
+    }
+    return null;
   }
 
   Future<void> _purchase(int eventId, int ticketTypeId) async {
@@ -72,7 +87,14 @@ class _TicketTypesListState extends State<_TicketTypesList> {
           setState(() { _error[ticketTypeId] = 'No order data received'; });
         }
       } else {
-        setState(() { _error[ticketTypeId] = 'Purchase failed: ${res.statusCode}'; });
+        final message = _extractErrorMessage(res.body) ?? 'Purchase failed: ${res.statusCode}';
+        if (res.statusCode == 401) {
+          setState(() { _error[ticketTypeId] = 'Harap login ulang untuk melanjutkan pembayaran. $message'; });
+        } else if (res.statusCode == 403) {
+          setState(() { _error[ticketTypeId] = 'Akses ditolak. Pastikan akun Anda adalah customer. $message'; });
+        } else {
+          setState(() { _error[ticketTypeId] = message; });
+        }
       }
     } catch (e) {
       setState(() { _error[ticketTypeId] = e.toString(); });

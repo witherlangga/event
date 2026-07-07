@@ -29,7 +29,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _loading = true;
   bool _confirming = false;
   String? _error;
-  DateTime? _deadline;
   Timer? _statusCheckTimer;
   int? _remainingMinutes;
   bool _paid = false;
@@ -66,10 +65,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final paymentData = data['payment_data'] as Map<String, dynamic>?;
-        final deadline = data['payment_deadline'] as String?;
 
         setState(() {
-          _deadline = deadline != null ? DateTime.parse(deadline) : null;
+          _remainingMinutes = data['remaining_time'] as int?;
         });
 
         if (paymentData != null) {
@@ -197,6 +195,96 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return formatter.format(amount.toInt());
   }
 
+  Widget _buildPaymentMethodButton(BuildContext context, String method) {
+    final selected = _selectedMethod == method;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedMethod = method;
+          if (method != 'bank_transfer') {
+            _selectedBank = null;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? Colors.deepPurple : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? Colors.deepPurple : Colors.grey.shade300,
+            width: selected ? 1.8 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.deepPurple.withAlpha(41),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _paymentMethodLabel(method),
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _paymentMethodDescription(method),
+              style: TextStyle(
+                color: selected ? Colors.white70 : Colors.grey.shade600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _paymentMethodLabel(String method) {
+    switch (method) {
+      case 'card':
+        return 'Credit / Debit Card';
+      case 'qris':
+        return 'QRIS Scan';
+      case 'bank_transfer':
+        return 'Bank Transfer';
+      case 'dana':
+      case 'gopay':
+      case 'ovo':
+        return 'E-Wallet';
+      default:
+        return method;
+    }
+  }
+
+  String _paymentMethodDescription(String method) {
+    switch (method) {
+      case 'card':
+        return 'Use the simulated card details below to complete payment.';
+      case 'qris':
+        return 'A QRIS code will be generated. Scan it using your banking app.';
+      case 'bank_transfer':
+        return 'Choose your bank and follow the virtual account instructions.';
+      case 'dana':
+        return 'Use DANA app to complete a demo transfer.';
+      case 'gopay':
+        return 'Use GoPay app to complete a demo transfer.';
+      case 'ovo':
+        return 'Use OVO app to complete a demo transfer.';
+      default:
+        return 'Select a payment option to continue.';
+    }
+  }
+
   String? _extractErrorMessage(String body) {
     try {
       final data = jsonDecode(body);
@@ -265,47 +353,54 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 24),
 
-            Card(
-              elevation: 2,
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Pilih Metode Pembayaran',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _selectedMethod,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      'Simulasi Pembayaran',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'qris', child: Text('QRIS')),
-                        DropdownMenuItem(value: 'dana', child: Text('DANA')),
-                        DropdownMenuItem(value: 'gopay', child: Text('GoPay')),
-                        DropdownMenuItem(value: 'ovo', child: Text('OVO')),
-                        DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() {
-                          _selectedMethod = value;
-                          if (value != 'bank_transfer') {
-                            _selectedBank = null;
-                          }
-                        });
-                      },
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pilih metode yang ingin kamu gunakan untuk menyelesaikan pembayaran pesanan ini. Ini adalah simulasi yang menyerupai proses dari versi web.',
+                      style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPaymentMethodButton(context, 'qris'),
+                    const SizedBox(height: 10),
+                    _buildPaymentMethodButton(context, 'dana'),
+                    const SizedBox(height: 10),
+                    _buildPaymentMethodButton(context, 'gopay'),
+                    const SizedBox(height: 10),
+                    _buildPaymentMethodButton(context, 'ovo'),
+                    const SizedBox(height: 10),
+                    _buildPaymentMethodButton(context, 'bank_transfer'),
                     if (_selectedMethod == 'bank_transfer') ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
-                        value: _selectedBank,
+                        initialValue: _selectedBank,
                         decoration: const InputDecoration(
                           labelText: 'Pilih Bank',
                           border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.white,
                         ),
                         items: const [
                           DropdownMenuItem(value: 'bca', child: Text('BCA')),
@@ -320,10 +415,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         },
                       ),
                     ],
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 18),
+                    Text(
+                      _paymentMethodDescription(_selectedMethod),
+                      style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                    ),
+                    const SizedBox(height: 18),
                     ElevatedButton(
                       onPressed: _loading ? null : _initializePayment,
-                      child: const Text('Mulai Pembayaran'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.deepPurple,
+                      ),
+                      child: Text(
+                        _loading ? 'Memulai...' : 'Mulai Simulasi Pembayaran',
+                        style: const TextStyle(fontSize: 15),
+                      ),
                     ),
                   ],
                 ),

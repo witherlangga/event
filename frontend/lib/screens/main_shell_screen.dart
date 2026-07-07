@@ -8,7 +8,6 @@ import '../services/api_service.dart';
 import '../theme.dart';
 import 'event_list_screen.dart';
 import 'discography_screen.dart';
-import 'gallery_screen.dart';
 import 'profile_hub_screen.dart';
 
 class MainShellScreen extends ConsumerStatefulWidget {
@@ -25,7 +24,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     _HomeTab(),
     EventListScreen(embedded: true),
     DiscographyScreen(embedded: true),
-    GalleryScreen(embedded: true),
     ProfileHubScreen(embedded: true),
   ];
 
@@ -66,14 +64,9 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               onTap: () { setState(() => _index = 2); Navigator.pop(context); },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galeri'),
-              onTap: () { setState(() => _index = 3); Navigator.pop(context); },
-            ),
-            ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profil'),
-              onTap: () { setState(() => _index = 4); Navigator.pop(context); },
+              onTap: () { setState(() => _index = 3); Navigator.pop(context); },
             ),
             const Divider(),
             ListTile(
@@ -97,14 +90,13 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Beranda'),
           NavigationDestination(icon: Icon(Icons.event_outlined), selectedIcon: Icon(Icons.event), label: 'Konser'),
           NavigationDestination(icon: Icon(Icons.album_outlined), selectedIcon: Icon(Icons.album), label: 'Musik'),
-          NavigationDestination(icon: Icon(Icons.photo_library_outlined), selectedIcon: Icon(Icons.photo_library), label: 'Galeri'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
   }
 
-  static const _titles = ['Beranda', 'Konser', 'Musik', 'Galeri', 'Profil'];
+  static const _titles = ['Beranda', 'Konser', 'Musik', 'Profil'];
 }
 
 class _HomeTab extends StatefulWidget {

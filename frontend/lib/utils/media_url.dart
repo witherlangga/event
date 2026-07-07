@@ -18,6 +18,10 @@ class MediaUrl {
   static String? resolve(String? path) {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return '$storageBase/$path';
+    final normalized = path.startsWith('/') ? path.substring(1) : path;
+    if (normalized.startsWith('storage/')) {
+      return '$storageBase/${normalized.substring('storage/'.length)}';
+    }
+    return '$storageBase/$normalized';
   }
 }

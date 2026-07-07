@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import '../theme.dart';
 
@@ -31,10 +32,40 @@ class _GalleryScreenState extends State<GalleryScreen> {
           if (moments is List) {
             return moments.map<Map<String, dynamic>>((item) {
               if (item is String) {
-                return {'image_url': item};
+                final raw = item.trim();
+                final lower = raw.toLowerCase();
+
+                // If it's already a full URL, keep it.
+                if (lower.startsWith('http://') || lower.startsWith('https://')) {
+                  return {'image_url': raw};
+                }
+
+                // If it already looks like a storage/uploads path, keep as-is (ApiService will resolve it).
+                if (lower.startsWith('/storage') || lower.startsWith('storage') || lower.startsWith('/uploads') || lower.startsWith('uploads') || lower.contains('/storage/') || lower.contains('/uploads/')) {
+                  return {'image_url': raw};
+                }
+
+                // Otherwise assume it's a storage filename and prefix with storage/
+                return {'image_url': 'storage/$raw'};
               }
               if (item is Map) {
-                return Map<String, dynamic>.from(item.cast<String, dynamic>());
+                final map = Map<String, dynamic>.from(item.cast<String, dynamic>());
+                // Normalize possible path fields
+                for (final key in ['image_url', 'url', 'path']) {
+                  if (map.containsKey(key) && map[key] is String) {
+                    final raw = map[key].toString().trim();
+                    final lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+                      map['image_url'] = raw;
+                    } else if (lower.startsWith('/storage') || lower.startsWith('storage') || lower.startsWith('/uploads') || lower.startsWith('uploads') || lower.contains('/storage/') || lower.contains('/uploads/')) {
+                      map['image_url'] = raw;
+                    } else {
+                      map['image_url'] = 'storage/$raw';
+                    }
+                    break;
+                  }
+                }
+                return map;
               }
               return <String, dynamic>{};
             }).where((item) => item.isNotEmpty).toList();
@@ -53,6 +84,50 @@ class _GalleryScreenState extends State<GalleryScreen> {
       child: const Center(
         child: Icon(Icons.photo, size: 48, color: Colors.white54),
       ),
+    );
+  }
+
+  Widget _authImage(String imageUrl, {BoxFit fit = BoxFit.cover}) {
+    return FutureBuilder<http.Response>(
+      future: ApiService.instance.get(imageUrl),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.accent),
+          );
+        }
+        if (snap.hasError) return _placeholder();
+        final res = snap.data;
+        if (res == null) return _placeholder();
+
+        final contentType = (res.headers['content-type'] ?? '').toLowerCase();
+        if (res.statusCode == 200 && contentType.startsWith('image')) {
+          return Image.memory(
+            res.bodyBytes,
+            fit: fit,
+            gaplessPlayback: true,
+          );
+        }
+
+        // Log non-image responses for debugging (status, content-type)
+        try {
+          debugPrint('Gallery image fetch: $imageUrl -> ${res.statusCode} (${contentType})');
+        } catch (_) {}
+
+        // Try to parse JSON response that may include {"url": "..."}
+        try {
+          final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+          if (decoded is Map<String, dynamic> && decoded['url'] is String) {
+            return Image.network(
+              decoded['url'],
+              fit: fit,
+              errorBuilder: (_, __, ___) => _placeholder(),
+            );
+          }
+        } catch (_) {}
+
+        return _placeholder();
+      },
     );
   }
 
@@ -129,23 +204,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       fit: StackFit.expand,
                       children: [
                         if (imageUrl.isNotEmpty)
-                          Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _placeholder(),
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: progress.expectedTotalBytes != null
-                                      ? progress.cumulativeBytesLoaded /
-                                          progress.expectedTotalBytes!
-                                      : null,
-                                  color: AppTheme.accent,
-                                ),
-                              );
-                            },
-                          )
+                          _authImage(imageUrl, fit: BoxFit.cover)
                         else
                           _placeholder(),
                         Positioned.fill(
@@ -246,7 +305,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
             color: AppTheme.primary,
             child: Center(
               child: InteractiveViewer(
-                child: Image.network(imageUrl),
+                child: _authImage(imageUrl, fit: BoxFit.contain),
               ),
             ),
           ),

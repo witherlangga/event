@@ -24,6 +24,21 @@ class ApiService {
     return 'http://127.0.0.1:8000/api';
   }
 
+  String get baseRoot {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final scheme = uri.scheme.isNotEmpty && uri.scheme != 'file' ? uri.scheme : 'http';
+      final host = uri.host.isNotEmpty ? uri.host : 'localhost';
+      return '$scheme://$host:8000';
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    }
+
+    return 'http://127.0.0.1:8000';
+  }
+
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _defaultHeaders() async {
@@ -56,9 +71,21 @@ class ApiService {
   }
 
   Future<http.Response> get(String path, {Map<String, String>? headers}) async {
-    final uri = path.startsWith('http://') || path.startsWith('https://')
-        ? Uri.parse(path)
-        : Uri.parse('$baseUrl$path');
+    late final Uri uri;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      uri = Uri.parse(path);
+    } else {
+      // If the path looks like a storage/static asset (served from public storage),
+      // use the root base (without /api) so we don't end up requesting /api/storage/...
+      final lower = path.toLowerCase();
+      final isStatic = lower.startsWith('/storage') || lower.startsWith('storage') || lower.startsWith('/uploads') || lower.contains('/storage/') || lower.contains('/uploads/');
+      if (isStatic) {
+        final p = path.startsWith('/') ? path : '/$path';
+        uri = Uri.parse('${baseRoot}$p');
+      } else {
+        uri = Uri.parse('$baseUrl$path');
+      }
+    }
     final h = await _defaultHeaders();
     if (headers != null) h.addAll(headers);
     return http.get(uri, headers: h);
