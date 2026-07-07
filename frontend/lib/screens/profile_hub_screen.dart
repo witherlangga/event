@@ -5,7 +5,6 @@ import '../constants/app_constants.dart';
 import '../theme.dart';
 import 'band_profile_screen.dart';
 import 'members_screen.dart';
-import 'news_screen.dart';
 import 'order_history_screen.dart';
 import 'ticket_management_screen.dart';
 import 'admin_dashboard_screen.dart';
@@ -21,58 +20,366 @@ class ProfileHubScreen extends ConsumerWidget {
     final auth = ref.watch(authNotifierProvider);
     final isAdmin = auth.user?.role == 'system_admin';
     final name = auth.user?.name ?? 'Guest';
+    final email = auth.user?.email ?? '';
 
-    final body = ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppTheme.accent,
-              child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'F'),
+    final body = RefreshIndicator(
+      onRefresh: () async {
+        // Refresh auth state
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Header Profile Section
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppTheme.primary, AppTheme.surface],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-            title: Text(name),
-            subtitle: Text('${AppConstants.fanLabel} • ${auth.user?.email ?? ''}'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.accent,
+                            AppTheme.secondary,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.accent.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: AppTheme.accent.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              AppConstants.fanLabel,
+                              style: const TextStyle(
+                                color: AppTheme.accent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.email_outlined,
+                        size: 16,
+                        color: AppTheme.gold,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          email,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        _tile(context, Icons.info_outline, 'Profil Band', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const BandProfileScreen()));
-        }),
-        _tile(context, Icons.group, 'Anggota Band', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MembersScreen()));
-        }),
-        _tile(context, Icons.newspaper, 'Berita', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen()));
-        }),
-        _tile(context, Icons.confirmation_num, 'Tiket Saya', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TicketManagementScreen()));
-        }),
-        _tile(context, Icons.history, 'Riwayat Pesanan', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
-        }),
-        if (isAdmin) ...[
-          const Divider(),
-          Text('Administrasi', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _tile(context, Icons.admin_panel_settings, 'Panel Konser', () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-          }),
-          _tile(context, Icons.dashboard_customize, 'Kelola Konten Band', () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminContentScreen()));
-          }),
+
+          // Menu Section
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Menu Utama',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 14,
+                        color: AppTheme.gold,
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                _menuTile(
+                  context,
+                  Icons.info_outline,
+                  'Profil Band',
+                  'Informasi lengkap band',
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BandProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _menuTile(
+                  context,
+                  Icons.group_outlined,
+                  'Anggota Band',
+                  'Lihat anggota dan biodata',
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MembersScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _menuTile(
+                  context,
+                  Icons.confirmation_num_outlined,
+                  'Tiket Saya',
+                  'Kelola tiket yang dimiliki',
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TicketManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _menuTile(
+                  context,
+                  Icons.history_outlined,
+                  'Riwayat Pesanan',
+                  'Lihat pembelian sebelumnya',
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const OrderHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                // Admin Section
+                if (isAdmin) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Administrasi',
+                    style:
+                        Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontSize: 14,
+                              color: AppTheme.secondary,
+                              letterSpacing: 0.5,
+                            ),
+                  ),
+                  const SizedBox(height: 12),
+                  _menuTile(
+                    context,
+                    Icons.admin_panel_settings_outlined,
+                    'Kelola Konser',
+                    'Atur konser dan tiket',
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _menuTile(
+                    context,
+                    Icons.dashboard_customize_outlined,
+                    'Kelola Konten',
+                    'Edit musik, galeri, dan berita',
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminContentScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final authNotifier = ref.read(authNotifierProvider.notifier);
+                      await authNotifier.logout();
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacementNamed('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Keluar'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(
+                        color: AppTheme.secondary,
+                        width: 1.5,
+                      ),
+                      foregroundColor: AppTheme.secondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
-      ],
+      ),
     );
 
     if (embedded) return body;
-    return Scaffold(appBar: AppBar(title: const Text('Profil')), body: body);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil'),
+        elevation: 0,
+        backgroundColor: AppTheme.primary,
+      ),
+      body: body,
+    );
   }
 
-  Widget _tile(BuildContext context, IconData icon, String title, VoidCallback onTap) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(leading: Icon(icon), title: Text(title), trailing: const Icon(Icons.chevron_right), onTap: onTap),
+  Widget _menuTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.accent.withValues(alpha: 0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF1a2847),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: AppTheme.accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: AppTheme.accent.withValues(alpha: 0.5),
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+

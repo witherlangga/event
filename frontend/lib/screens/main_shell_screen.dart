@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../constants/app_constants.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -9,7 +10,6 @@ import 'event_list_screen.dart';
 import 'discography_screen.dart';
 import 'gallery_screen.dart';
 import 'profile_hub_screen.dart';
-import 'news_screen.dart';
 
 class MainShellScreen extends ConsumerStatefulWidget {
   const MainShellScreen({super.key});
@@ -56,7 +56,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               onTap: () { setState(() => _index = 0); Navigator.pop(context); },
             ),
             ListTile(
-              leading: const Icon(Icons.music_note),
+              leading: const Icon(Icons.event),
               title: const Text('Konser'),
               onTap: () { setState(() => _index = 1); Navigator.pop(context); },
             ),
@@ -69,14 +69,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               leading: const Icon(Icons.photo_library),
               title: const Text('Galeri'),
               onTap: () { setState(() => _index = 3); Navigator.pop(context); },
-            ),
-            ListTile(
-              leading: const Icon(Icons.newspaper),
-              title: const Text('Berita'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen()));
-              },
             ),
             ListTile(
               leading: const Icon(Icons.person),
@@ -103,7 +95,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Beranda'),
-          NavigationDestination(icon: Icon(Icons.music_note_outlined), selectedIcon: Icon(Icons.music_note), label: 'Konser'),
+          NavigationDestination(icon: Icon(Icons.event_outlined), selectedIcon: Icon(Icons.event), label: 'Konser'),
           NavigationDestination(icon: Icon(Icons.album_outlined), selectedIcon: Icon(Icons.album), label: 'Musik'),
           NavigationDestination(icon: Icon(Icons.photo_library_outlined), selectedIcon: Icon(Icons.photo_library), label: 'Galeri'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
@@ -124,7 +116,6 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> {
   Map<String, dynamic>? _bandProfile;
-  List<Map<String, dynamic>> _news = [];
 
   @override
   void initState() {
@@ -139,9 +130,30 @@ class _HomeTabState extends State<_HomeTab> {
         final profile = ApiService.extractObject(jsonDecode(profileRes.body));
         if (profile != null) setState(() => _bandProfile = profile);
       }
-      final news = await ApiService.instance.getNews();
-      if (mounted) setState(() => _news = news.take(3).toList());
     } catch (_) {}
+  }
+
+  Future<void> _openMap() async {
+    final mapLink = _bandProfile?['next_show_map_link']?.toString();
+    if (mapLink != null && mapLink.isNotEmpty) {
+      try {
+        if (await canLaunchUrl(Uri.parse(mapLink))) {
+          await launchUrl(Uri.parse(mapLink), mode: LaunchMode.externalApplication);
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Tidak dapat membuka peta')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -197,23 +209,6 @@ class _HomeTabState extends State<_HomeTab> {
                 const SizedBox(height: 8),
                 Text(bio, style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 10,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EventListScreen(embedded: true))),
-                      icon: const Icon(Icons.confirmation_num_outlined),
-                      label: const Text('Dapatkan Tiket'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
-                      icon: const Icon(Icons.newspaper_outlined),
-                      label: const Text('Baca Berita'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -238,9 +233,9 @@ class _HomeTabState extends State<_HomeTab> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _openMap,
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
-                        child: const Text('Book Now'),
+                        child: const Text('Show Location'),
                       ),
                     ],
                   ),
@@ -250,61 +245,7 @@ class _HomeTabState extends State<_HomeTab> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Berita Terbaru', style: Theme.of(context).textTheme.titleMedium),
-                TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())), child: const Text('Lihat semua')),
-              ],
-            ),
-          ),
-          if (_news.isEmpty)
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Belum ada berita.'))))
-          else
-            SizedBox(
-              height: 190,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: _news.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final n = _news[index];
-                  return SizedBox(
-                    width: 260,
-                    child: Card(
-                      elevation: 0,
-                      color: AppTheme.card,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(color: AppTheme.accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(999)),
-                                child: Text('News', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.accent)),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(n['title']?.toString() ?? 'Berita', maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
-                              const SizedBox(height: 8),
-                              Text(n['excerpt']?.toString() ?? '', maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Konser Mendatang', style: Theme.of(context).textTheme.titleMedium),
+            child: Text('Daftar Tiket', style: Theme.of(context).textTheme.titleMedium),
           ),
           const SizedBox(height: 420, child: EventListScreen(embedded: true)),
         ],
